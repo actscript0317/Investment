@@ -7,8 +7,11 @@ Node.js, Tailwind CSS, Supabase, 한국투자증권 API를 사용한 실시간 �
 - ✅ 홈화면
 - ✅ 회원가입 (Supabase Auth)
 - ✅ 로그인
-- 🚧 실시간 주식 시세 (한국투자증권 API)
-- 🚧 포트폴리오 관리
+- ✅ 실시간 주식 시세 (한국투자증권 API)
+- ✅ 계좌 잔고 조회
+- ✅ 거래내역 조회
+- ✅ 보유 종목 현황
+- 🚧 주식 매매 기능
 - 🚧 알림 서비스
 
 ## 프로젝트 구조
@@ -23,17 +26,24 @@ stock-trading-system/
 │   │   ├── js/
 │   │   │   ├── supabase-client.js  # Supabase 클라이언트
 │   │   │   ├── signup.js           # 회원가입 로직
-│   │   │   └── login.js            # 로그인 로직
+│   │   │   ├── login.js            # 로그인 로직
+│   │   │   ├── stock.js            # 주식 조회 로직
+│   │   │   └── account.js          # 계좌 관리 로직
 │   │   ├── index.html          # 홈화면
 │   │   ├── signup.html         # 회원가입 페이지
-│   │   └── login.html          # 로그인 페이지
+│   │   ├── login.html          # 로그인 페이지
+│   │   ├── stock.html          # 주식 조회 페이지
+│   │   └── account.html        # 계좌 페이지
 │   ├── package.json
 │   ├── tailwind.config.js
 │   └── postcss.config.js
 │
 ├── backend/                     # 백엔드
 │   ├── src/
-│   │   └── server.js           # Express 서버
+│   │   ├── server.js           # Express 서버
+│   │   └── services/
+│   │       ├── kisApi.js       # 한국투자증권 API 클라이언트
+│   │       └── kisApiService.js # 한국투자증권 API 서비스
 │   ├── package.json
 │   └── .env.example            # 환경 변수 예시
 │
@@ -62,20 +72,39 @@ npm install
 
 ### 2. 환경 변수 설정
 
-#### Supabase 설정
-1. [Supabase](https://supabase.com)에서 프로젝트 생성
-2. `backend/.env.example`을 복사하여 `backend/.env` 파일 생성
-3. Supabase URL과 Anon Key를 설정
-4. `frontend/public/js/supabase-client.js`에서 Supabase URL과 Key 업데이트
+#### 한국투자증권 API 설정
+1. [한국투자증권 오픈API 포털](https://apiportal.koreainvestment.com)에서 회원가입 및 앱 등록
+2. 앱 키(App Key)와 앱 시크릿(App Secret) 발급
+3. 모의투자 계좌 번호 확인
 
-#### 환경 변수 예시 (`backend/.env`)
-```env
-PORT=3000
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_supabase_anon_key
-KIS_APP_KEY=your_kis_app_key
-KIS_APP_SECRET=your_kis_app_secret
+#### Supabase 설정 (선택사항)
+1. [Supabase](https://supabase.com)에서 프로젝트 생성
+2. Supabase URL과 Service Role Key 확인
+
+#### 환경 변수 설정
+1. `backend/.env.example`을 복사하여 `backend/.env` 파일 생성
+```bash
+cd backend
+cp .env.example .env
 ```
+
+2. `.env` 파일 수정
+```env
+# 한국투자증권 API 설정
+KIS_APP_KEY=발급받은_앱_키
+KIS_APP_SECRET=발급받은_앱_시크릿
+KIS_BASE_URL=https://openapivts.koreainvestment.com:29443  # 모의투자
+KIS_ACCOUNT_NUMBER=12345678-01  # 계좌번호 (앞8자리-뒤2자리)
+
+# Supabase 설정 (선택사항)
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_key
+
+# 서버 포트
+PORT=3000
+```
+
+**중요:** 실전투자 사용 시 `KIS_BASE_URL`을 `https://openapi.koreainvestment.com:9443`으로 변경하세요.
 
 ### 3. Tailwind CSS 빌드
 ```bash
@@ -117,26 +146,52 @@ npm run dev
 2. `npm run build:css` 실행하여 CSS 빌드
 3. 개발 중에는 `npm run watch:css` 실행으로 자동 빌드
 
-## API 연동 계획
+## API 연동
 
 ### 한국투자증권 API
-- 실시간 주식 시세 조회
-- 계좌 정보 조회
-- 주문 기능
+- ✅ 실시간 주식 시세 조회
+- ✅ 계좌 잔고 조회
+- ✅ 거래내역 조회
+- ✅ 매수가능금액 조회
+- 🚧 주식 매수/매도 주문
+- 🚧 주문 취소
 
 ### Supabase
-- 사용자 인증 (회원가입/로그인)
-- 사용자 데이터 저장
-- 포트폴리오 정보 관리
+- ✅ 사용자 인증 (회원가입/로그인)
+- ✅ 사용자 데이터 저장
+- 🚧 포트폴리오 정보 관리
+
+## 주요 페이지
+
+### 1. 홈 (`/`)
+- 서비스 소개 및 주요 기능 안내
+
+### 2. 주식 조회 (`/stock.html`)
+- 실시간 주식 시세 조회
+- 종목 검색
+- 차트 표시 (일/주/월/년봉)
+
+### 3. 내 계좌 (`/account.html`)
+- 계좌 요약 정보
+  - 총 평가금액
+  - 평가손익
+  - 수익률
+- 보유 종목 현황
+  - 종목명, 보유수량, 평균단가, 현재가
+  - 평가금액, 평가손익, 수익률
+- 거래내역 조회
+  - 일자, 종목명, 구분(매수/매도)
+  - 수량, 체결가, 체결금액
 
 ## 다음 단계
 
 1. ✅ 프론트엔드/백엔드 폴더 분리
-2. 한국투자증권 API 연동
-3. 실시간 주식 시세 표시 기능
-4. 대시보드 페이지 구현
-5. 포트폴리오 관리 기능
-6. 알림 서비스 구현
+2. ✅ 한국투자증권 API 연동
+3. ✅ 실시간 주식 시세 표시 기능
+4. ✅ 계좌 페이지 구현
+5. 🚧 주식 매매 기능
+6. 🚧 대시보드 페이지 구현
+7. 🚧 알림 서비스 구현
 
 ## 기술 스택
 

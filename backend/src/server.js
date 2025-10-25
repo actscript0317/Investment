@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const kisApiService = require('./services/kisApiService');
+const kisApi = require('./services/kisApi');
+require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -144,6 +146,92 @@ app.get('/api/stock/search', async (req, res) => {
     }
 });
 
+// 계좌 잔고 조회 API
+app.get('/api/account/balance', async (req, res) => {
+    try {
+        const accountNumber = process.env.KIS_ACCOUNT_NUMBER;
+
+        if (!accountNumber) {
+            return res.status(400).json({
+                error: 'Account number not configured',
+                message: '계좌번호가 설정되지 않았습니다. .env 파일에 KIS_ACCOUNT_NUMBER를 설정해주세요.'
+            });
+        }
+
+        const balanceData = await kisApi.getAccountBalance(accountNumber);
+        res.json(balanceData);
+    } catch (error) {
+        console.error('Account balance error:', error);
+        res.status(500).json({
+            error: 'Failed to fetch account balance',
+            message: error.message
+        });
+    }
+});
+
+// 거래내역 조회 API
+app.get('/api/account/transactions', async (req, res) => {
+    try {
+        const accountNumber = process.env.KIS_ACCOUNT_NUMBER;
+        const { startDate, endDate } = req.query;
+
+        if (!accountNumber) {
+            return res.status(400).json({
+                error: 'Account number not configured',
+                message: '계좌번호가 설정되지 않았습니다. .env 파일에 KIS_ACCOUNT_NUMBER를 설정해주세요.'
+            });
+        }
+
+        // 기본값: 최근 30일
+        const end = endDate || new Date().toISOString().split('T')[0].replace(/-/g, '');
+        const start = startDate || (() => {
+            const date = new Date();
+            date.setDate(date.getDate() - 30);
+            return date.toISOString().split('T')[0].replace(/-/g, '');
+        })();
+
+        const transactionData = await kisApi.getTransactionHistory(accountNumber, start, end);
+        res.json(transactionData);
+    } catch (error) {
+        console.error('Transaction history error:', error);
+        res.status(500).json({
+            error: 'Failed to fetch transaction history',
+            message: error.message
+        });
+    }
+});
+
+// 매수가능금액 조회 API
+app.get('/api/account/buying-power', async (req, res) => {
+    try {
+        const accountNumber = process.env.KIS_ACCOUNT_NUMBER;
+        const { stockCode, price } = req.query;
+
+        if (!accountNumber) {
+            return res.status(400).json({
+                error: 'Account number not configured',
+                message: '계좌번호가 설정되지 않았습니다. .env 파일에 KIS_ACCOUNT_NUMBER를 설정해주세요.'
+            });
+        }
+
+        if (!stockCode || !price) {
+            return res.status(400).json({
+                error: 'Missing parameters',
+                message: '종목코드와 가격을 입력해주세요.'
+            });
+        }
+
+        const buyingPowerData = await kisApi.getBuyingPower(accountNumber, stockCode, parseInt(price));
+        res.json(buyingPowerData);
+    } catch (error) {
+        console.error('Buying power error:', error);
+        res.status(500).json({
+            error: 'Failed to fetch buying power',
+            message: error.message
+        });
+    }
+});
+
 // 헬퍼 함수: 종목명 가져오기
 function getStockName(code) {
     const stockNames = {
@@ -225,6 +313,10 @@ app.get('/signup', (req, res) => {
 
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/public', 'login.html'));
+});
+
+app.get('/account', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/public', 'account.html'));
 });
 
 // Start server
