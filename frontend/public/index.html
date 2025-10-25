@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>주식 트레이딩 시스템</title>
+    <link rel="stylesheet" href="/css/output.css">
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-2xl font-bold text-blue-600">주식 트레이딩</a>
+                </div>
+                <div id="navButtons" class="flex items-center space-x-4">
+                    <!-- 로그인 상태에 따라 JavaScript로 변경됨 -->
+                    <a href="/login.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">로그인</a>
+                    <a href="/signup.html" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">회원가입</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div class="text-center">
+            <h2 class="text-4xl font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+                실시간 주식 트레이딩
+            </h2>
+            <p class="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+                한국투자증권 API를 통한 실시간 주식 정보 및 트레이딩 시스템
+            </p>
+            <div class="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+                <div class="rounded-md shadow">
+                    <a id="heroButton" href="/signup.html" class="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10">
+                        시작하기
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Section -->
+        <div class="mt-20">
+            <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="text-blue-600 text-3xl mb-4">📊</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">실시간 시세</h3>
+                    <p class="text-gray-600">한국투자증권 API를 통한 실시간 주식 시세 확인</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="text-blue-600 text-3xl mb-4">💼</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">포트폴리오 관리</h3>
+                    <p class="text-gray-600">나의 투자 포트폴리오를 한눈에 관리</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="text-blue-600 text-3xl mb-4">🔔</div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">알림 서비스</h3>
+                    <p class="text-gray-600">주요 주식 변동에 대한 실시간 알림</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-20">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500 text-sm">
+                &copy; 2025 주식 트레이딩 시스템. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <script type="module" src="/js/index.js"></script>
+</body>
+</html>
