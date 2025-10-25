@@ -152,19 +152,24 @@ app.get('/api/account/balance', async (req, res) => {
         const accountNumber = process.env.KIS_ACCOUNT_NUMBER;
 
         if (!accountNumber) {
+            console.error('❌ KIS_ACCOUNT_NUMBER가 설정되지 않았습니다.');
             return res.status(400).json({
                 error: 'Account number not configured',
-                message: '계좌번호가 설정되지 않았습니다. .env 파일에 KIS_ACCOUNT_NUMBER를 설정해주세요.'
+                message: '계좌번호가 설정되지 않았습니다. backend/.env 파일에 KIS_ACCOUNT_NUMBER를 설정해주세요.'
             });
         }
 
+        console.log('✅ 계좌 잔고 조회 요청:', accountNumber);
         const balanceData = await kisApi.getAccountBalance(accountNumber);
+        console.log('✅ 계좌 잔고 조회 성공');
         res.json(balanceData);
     } catch (error) {
-        console.error('Account balance error:', error);
+        console.error('❌ 계좌 잔고 조회 실패:', error.message);
+        console.error('상세 에러:', error.response?.data || error);
         res.status(500).json({
             error: 'Failed to fetch account balance',
-            message: error.message
+            message: error.message,
+            details: error.response?.data?.msg || '한국투자증권 API 호출 실패'
         });
     }
 });
@@ -176,9 +181,10 @@ app.get('/api/account/transactions', async (req, res) => {
         const { startDate, endDate } = req.query;
 
         if (!accountNumber) {
+            console.error('❌ KIS_ACCOUNT_NUMBER가 설정되지 않았습니다.');
             return res.status(400).json({
                 error: 'Account number not configured',
-                message: '계좌번호가 설정되지 않았습니다. .env 파일에 KIS_ACCOUNT_NUMBER를 설정해주세요.'
+                message: '계좌번호가 설정되지 않았습니다. backend/.env 파일에 KIS_ACCOUNT_NUMBER를 설정해주세요.'
             });
         }
 
@@ -190,13 +196,17 @@ app.get('/api/account/transactions', async (req, res) => {
             return date.toISOString().split('T')[0].replace(/-/g, '');
         })();
 
+        console.log(`✅ 거래내역 조회 요청: ${start} ~ ${end}`);
         const transactionData = await kisApi.getTransactionHistory(accountNumber, start, end);
+        console.log('✅ 거래내역 조회 성공');
         res.json(transactionData);
     } catch (error) {
-        console.error('Transaction history error:', error);
+        console.error('❌ 거래내역 조회 실패:', error.message);
+        console.error('상세 에러:', error.response?.data || error);
         res.status(500).json({
             error: 'Failed to fetch transaction history',
-            message: error.message
+            message: error.message,
+            details: error.response?.data?.msg || '한국투자증권 API 호출 실패'
         });
     }
 });

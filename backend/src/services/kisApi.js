@@ -1,4 +1,5 @@
 const axios = require('axios');
+const kisApiService = require('./kisApiService');
 require('dotenv').config();
 
 class KISApiClient {
@@ -6,37 +7,17 @@ class KISApiClient {
     this.appKey = process.env.KIS_APP_KEY;
     this.appSecret = process.env.KIS_APP_SECRET;
     this.baseUrl = process.env.KIS_BASE_URL || 'https://openapivts.koreainvestment.com:29443'; // 모의투자 기본값
-    this.accessToken = null;
-    this.tokenExpiry = null;
   }
 
   /**
-   * Access Token 발급
+   * Access Token 발급 (kisApiService의 토큰 관리 사용 - 하루 1회 발급)
    */
   async getAccessToken() {
-    // 토큰이 유효하면 재사용
-    if (this.accessToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
-      return this.accessToken;
-    }
-
     try {
-      const response = await axios.post(`${this.baseUrl}/oauth2/tokenP`, {
-        grant_type: 'client_credentials',
-        appkey: this.appKey,
-        appsecret: this.appSecret
-      }, {
-        headers: {
-          'Content-Type': 'application/json; charset=utf-8'
-        }
-      });
-
-      this.accessToken = response.data.access_token;
-      // 토큰 유효기간 설정 (24시간 - 1시간 여유)
-      this.tokenExpiry = new Date(Date.now() + 23 * 60 * 60 * 1000);
-
-      return this.accessToken;
+      // kisApiService의 토큰 관리 사용 (파일 캐싱, 하루 1회 발급)
+      return await kisApiService.getAccessToken();
     } catch (error) {
-      console.error('Access Token 발급 실패:', error.response?.data || error.message);
+      console.error('❌ Access Token 발급 실패:', error.message);
       throw error;
     }
   }
