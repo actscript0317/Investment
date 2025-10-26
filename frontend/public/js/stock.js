@@ -217,17 +217,22 @@ async function searchStock() {
     }
 }
 
-// 종목 정보 로드 (한국투자증권 MCP 사용)
+// 종목 정보 로드 (한국투자증권 API 사용)
 async function loadStockInfo(stockCode) {
     try {
-        // 백엔드 API를 통해 한국투자증권 MCP 호출
+        // 백엔드 API를 통해 한국투자증권 API 호출
         const response = await fetch(`http://localhost:3000/api/stock/quote/${stockCode}`);
 
-        if (!response.ok) {
-            throw new Error('종목 정보를 가져올 수 없습니다.');
-        }
-
         const data = await response.json();
+
+        // 토큰 에러 체크
+        if (!response.ok) {
+            if (data.needToken) {
+                showTokenError();
+                throw new Error('토큰이 필요합니다.');
+            }
+            throw new Error(data.message || '종목 정보를 가져올 수 없습니다.');
+        }
 
         // 종목 정보 표시
         displayStockInfo(data);
@@ -278,23 +283,31 @@ function displayStockInfo(data) {
 // 차트 데이터 로드
 async function loadChartData(stockCode, period) {
     try {
-        // 백엔드 API를 통해 한국투자증권 MCP 호출 - 항상 전체 데이터 로드
+        // 백엔드 API를 통해 한국투자증권 API 호출 - 항상 전체 데이터 로드
         const url = `http://localhost:3000/api/stock/chart/${stockCode}?period=${period}&loadAll=true`;
         const response = await fetch(url);
 
-        if (!response.ok) {
-            throw new Error('차트 데이터를 가져올 수 없습니다.');
-        }
-
         const data = await response.json();
 
-        // 날짜 범위 정보 업데이트
-        if (data && data.length > 0) {
-            const startDate = new Date(data[0].date).toLocaleDateString('ko-KR');
-            const endDate = new Date(data[data.length - 1].date).toLocaleDateString('ko-KR');
-            const dataRangeInfo = document.getElementById('dataRangeInfo');
-            dataRangeInfo.textContent = `${startDate} ~ ${endDate} (${data.length}개)`;
+        // 토큰 에러 체크
+        if (!response.ok) {
+            if (data.needToken) {
+                showTokenError();
+                throw new Error('토큰이 필요합니다.');
+            }
+            throw new Error(data.message || '차트 데이터를 가져올 수 없습니다.');
         }
+
+        // 데이터 검증
+        if (!data || data.length === 0) {
+            throw new Error('차트 데이터가 없습니다.');
+        }
+
+        // 날짜 범위 정보 업데이트
+        const startDate = new Date(data[0].date).toLocaleDateString('ko-KR');
+        const endDate = new Date(data[data.length - 1].date).toLocaleDateString('ko-KR');
+        const dataRangeInfo = document.getElementById('dataRangeInfo');
+        dataRangeInfo.textContent = `${startDate} ~ ${endDate} (${data.length}개)`;
 
         // 차트 그리기
         drawChart(data);
@@ -564,4 +577,25 @@ function showError(message) {
 function hideError() {
     const errorEl = document.getElementById('errorMessage');
     errorEl.classList.add('hidden');
+}
+
+// 토큰 에러 메시지 표시
+function showTokenError() {
+    const message = `
+⚠️ API 토큰이 필요합니다!
+
+주식 데이터를 조회하려면 먼저 한국투자증권 API 토큰을 발급받아야 합니다.
+
+서버 터미널에서 다음 명령어를 실행하세요:
+curl -X POST http://localhost:3000/api/token/issue
+
+또는 브라우저 콘솔(F12)에서:
+fetch('http://localhost:3000/api/token/issue', { method: 'POST' })
+  .then(r => r.json())
+  .then(console.log)
+    `.trim();
+
+    alert(message);
+
+    showError('⚠️ API 토큰이 필요합니다. 먼저 토큰을 발급받아주세요.');
 }

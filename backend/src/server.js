@@ -26,30 +26,30 @@ app.get('/api/stock/quote/:stockCode', async (req, res) => {
     try {
         const { stockCode } = req.params;
 
-        try {
-            // 실제 한국투자증권 API 호출
-            const stockData = await kisApiService.getStockQuote(stockCode);
-            res.json(stockData);
-        } catch (apiError) {
-            console.error('API 호출 실패, 샘플 데이터 반환:', apiError.message);
+        console.log(`📊 주식 시세 조회: ${stockCode}`);
 
-            // API 실패 시 샘플 데이터 반환
-            const stockData = {
-                code: stockCode,
-                name: getStockName(stockCode),
-                currentPrice: Math.floor(Math.random() * 100000) + 50000,
-                priceChange: Math.floor(Math.random() * 5000) - 2500,
-                changeRate: parseFloat((Math.random() * 10 - 5).toFixed(2)),
-                openPrice: Math.floor(Math.random() * 100000) + 50000,
-                highPrice: Math.floor(Math.random() * 100000) + 50000,
-                lowPrice: Math.floor(Math.random() * 100000) + 50000,
-                volume: Math.floor(Math.random() * 10000000)
-            };
-            res.json(stockData);
-        }
+        // 실제 한국투자증권 API 호출
+        const stockData = await kisApiService.getStockQuote(stockCode);
+
+        console.log(`✅ 주식 시세 조회 성공: ${stockData.name}`);
+        res.json(stockData);
+
     } catch (error) {
-        console.error('Stock quote error:', error);
-        res.status(500).json({ error: 'Failed to fetch stock quote' });
+        console.error('❌ 주식 시세 조회 실패:', error.message);
+
+        // 토큰 에러인 경우 명확한 메시지 반환
+        if (error.message && error.message.includes('토큰')) {
+            return res.status(401).json({
+                error: 'Token required',
+                message: '토큰이 필요합니다. 먼저 토큰을 발급받아주세요.',
+                needToken: true
+            });
+        }
+
+        res.status(500).json({
+            error: 'Failed to fetch stock quote',
+            message: error.message || '주식 시세를 불러오는데 실패했습니다.'
+        });
     }
 });
 
@@ -57,23 +57,33 @@ app.get('/api/stock/quote/:stockCode', async (req, res) => {
 app.get('/api/stock/chart/:stockCode', async (req, res) => {
     try {
         const { stockCode } = req.params;
-        const { period, loadAll } = req.query;
+        const { period = 'D', loadAll } = req.query;
         const shouldLoadAll = loadAll === 'true';
 
-        try {
-            // 실제 한국투자증권 API 호출
-            const chartData = await kisApiService.getStockChartData(stockCode, period, shouldLoadAll);
-            res.json(chartData);
-        } catch (apiError) {
-            console.error('API 호출 실패, 샘플 데이터 반환:', apiError.message);
+        console.log(`📈 차트 데이터 조회: ${stockCode}, 기간: ${period}, 전체로드: ${shouldLoadAll}`);
 
-            // API 실패 시 샘플 데이터 반환
-            const chartData = generateChartData(period);
-            res.json(chartData);
-        }
+        // 실제 한국투자증권 API 호출
+        const chartData = await kisApiService.getStockChartData(stockCode, period, shouldLoadAll);
+
+        console.log(`✅ 차트 데이터 조회 성공: ${chartData.length}개 데이터`);
+        res.json(chartData);
+
     } catch (error) {
-        console.error('Stock chart error:', error);
-        res.status(500).json({ error: 'Failed to fetch stock chart' });
+        console.error('❌ 차트 데이터 조회 실패:', error.message);
+
+        // 토큰 에러인 경우 명확한 메시지 반환
+        if (error.message && error.message.includes('토큰')) {
+            return res.status(401).json({
+                error: 'Token required',
+                message: '토큰이 필요합니다. 먼저 토큰을 발급받아주세요.',
+                needToken: true
+            });
+        }
+
+        res.status(500).json({
+            error: 'Failed to fetch stock chart',
+            message: error.message || '차트 데이터를 불러오는데 실패했습니다.'
+        });
     }
 });
 
@@ -267,76 +277,6 @@ app.get('/api/account/buying-power', async (req, res) => {
         });
     }
 });
-
-// 헬퍼 함수: 종목명 가져오기
-function getStockName(code) {
-    const stockNames = {
-        '005930': '삼성전자',
-        '000660': 'SK하이닉스',
-        '035420': 'NAVER',
-        '035720': '카카오',
-        '207940': '삼성바이오로직스',
-        '373220': 'LG에너지솔루션'
-    };
-    return stockNames[code] || '알 수 없는 종목';
-}
-
-// 헬퍼 함수: 차트 데이터 생성 (폴백용)
-function generateChartData(period) {
-    const data = [];
-    let count = 30; // 기본 30개 데이터
-
-    // 봉 차트 타입별 데이터 개수
-    switch (period) {
-        case 'D':
-            count = 30; // 일봉: 최근 30거래일
-            break;
-        case 'W':
-            count = 30; // 주봉: 최근 30주
-            break;
-        case 'M':
-            count = 30; // 월봉: 최근 30개월
-            break;
-        case 'Y':
-            count = 30; // 년봉: 최근 30개월 (월봉 데이터 사용)
-            break;
-        default:
-            count = 30;
-    }
-
-    const basePrice = 70000;
-    for (let i = count - 1; i >= 0; i--) {
-        const date = new Date();
-
-        // 봉 타입에 따라 날짜 계산
-        switch (period) {
-            case 'D':
-                date.setDate(date.getDate() - i);
-                break;
-            case 'W':
-                date.setDate(date.getDate() - (i * 7));
-                break;
-            case 'M':
-            case 'Y':
-                date.setMonth(date.getMonth() - i);
-                break;
-        }
-
-        const variation = (Math.random() - 0.5) * 5000;
-        const price = basePrice + variation + (Math.random() * 2000);
-
-        data.push({
-            date: date.toISOString().split('T')[0],
-            open: Math.floor(price + Math.random() * 1000),
-            high: Math.floor(price + Math.random() * 2000),
-            low: Math.floor(price - Math.random() * 2000),
-            close: Math.floor(price),
-            volume: Math.floor(Math.random() * 10000000)
-        });
-    }
-
-    return data;
-}
 
 // Serve frontend HTML files
 app.get('/', (req, res) => {
