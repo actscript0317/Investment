@@ -18,9 +18,11 @@ window.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Chart.js 확인
+    // Chart.js Financial 플러그인 확인
     console.log('Chart.js loaded:', !!window.Chart);
-    console.log('CandlestickController loaded:', !!window.CandlestickController);
+    if (window.Chart) {
+        console.log('Available chart types:', Object.keys(window.Chart.registry.controllers));
+    }
 
     initializeEventListeners();
 });
@@ -349,13 +351,6 @@ function drawChart(chartData) {
         console.error('❌ Chart.js가 로드되지 않았습니다.');
         return;
     }
-
-    // Financial 플러그인 확인 - 간단한 체크로 변경
-    console.log('Available in window:', {
-        Chart: !!window.Chart,
-        CandlestickController: !!window.CandlestickController,
-        CandlestickElement: !!window.CandlestickElement
-    });
 
     // 기존 차트가 있으면 완전히 제거
     if (stockChart) {

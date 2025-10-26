@@ -181,29 +181,27 @@
         </div>
     </div>
 
-    <!-- Chart.js 라이브러리 (CDN) -->
+    <!-- Chart.js 라이브러리 (CDN) - v4 호환 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-luxon@1.3.1/dist/chartjs-adapter-luxon.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
-    <script src="https://unpkg.com/chartjs-chart-financial@0.1.1/dist/chartjs-chart-financial.js"></script>
+    <!-- Chart.js v4 호환 Financial 차트 -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.1/dist/chartjs-chart-financial.min.js"></script>
 
     <script>
-        // Financial 플러그인 수동 등록
-        if (window.Chart && window.CandlestickController) {
-            Chart.register(
-                window.CandlestickController,
-                window.CandlestickElement,
-                window.OhlcController,
-                window.OhlcElement
-            );
-            console.log('✅ Financial plugin registered in HTML');
+        // Financial 플러그인 자동 등록 확인
+        console.log('Chart.js loaded:', !!window.Chart);
+        console.log('Financial controllers:', {
+            CandlestickController: !!window.Chart?.registry?.controllers?.candlestick,
+            CandlestickElement: !!window.Chart?.registry?.elements?.candlestick
+        });
+
+        if (window.Chart) {
+            console.log('✅ Chart.js v4 with Financial plugin loaded');
         } else {
-            console.error('❌ Chart.js or Financial plugin not loaded', {
-                Chart: !!window.Chart,
-                CandlestickController: !!window.CandlestickController
-            });
+            console.error('❌ Chart.js not loaded');
         }
     </script>
 
