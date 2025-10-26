@@ -91,6 +91,8 @@ function canIssueToken() {
 
 // 액세스 토큰 가져오기 (자동 발급 안함 - 저장된 토큰만 사용)
 async function getAccessToken() {
+    console.log('📞 getAccessToken() 호출됨');
+
     // 메모리에 토큰이 있고 유효하면 재사용
     if (accessToken && tokenExpiry && Date.now() < tokenExpiry) {
         const remainingMinutes = Math.floor((tokenExpiry - Date.now()) / 1000 / 60);
@@ -98,12 +100,16 @@ async function getAccessToken() {
         return accessToken;
     }
 
+    console.log('⚠️ 메모리에 토큰 없음, 파일에서 로드 시도...');
+
     // 파일에서 다시 로드 시도
     if (loadTokenFromCache()) {
+        console.log('✅ 파일에서 토큰 로드 성공');
         return accessToken;
     }
 
     // 저장된 토큰이 없으면 에러 발생 (자동 발급 안함)
+    console.log('❌ 저장된 토큰이 없습니다. 자동 발급하지 않습니다.');
     throw new Error('저장된 토큰이 없습니다. 먼저 토큰을 발급받아야 합니다.');
 }
 
