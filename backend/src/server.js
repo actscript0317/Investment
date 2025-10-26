@@ -77,6 +77,32 @@ app.get('/api/stock/chart/:stockCode', async (req, res) => {
     }
 });
 
+// 토큰 상태 확인 API
+app.get('/api/token/status', (req, res) => {
+    try {
+        const status = kisApiService.getTokenStatus();
+        res.json(status);
+    } catch (error) {
+        console.error('❌ 토큰 상태 확인 실패:', error);
+        res.status(500).json({ error: 'Failed to check token status' });
+    }
+});
+
+// 토큰 수동 발급 API
+app.post('/api/token/issue', async (req, res) => {
+    try {
+        console.log('🔄 토큰 수동 발급 요청...');
+        const result = await kisApiService.issueNewToken();
+        res.json(result);
+    } catch (error) {
+        console.error('❌ 토큰 발급 실패:', error.message);
+        res.status(500).json({
+            error: 'Failed to issue token',
+            message: error.message
+        });
+    }
+});
+
 // 종목 검색 API
 app.get('/api/stock/search', async (req, res) => {
     try {

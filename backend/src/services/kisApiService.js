@@ -89,7 +89,7 @@ function canIssueToken() {
     return true;
 }
 
-// 액세스 토큰 발급
+// 액세스 토큰 가져오기 (자동 발급 안함 - 저장된 토큰만 사용)
 async function getAccessToken() {
     // 메모리에 토큰이 있고 유효하면 재사용
     if (accessToken && tokenExpiry && Date.now() < tokenExpiry) {
@@ -103,6 +103,12 @@ async function getAccessToken() {
         return accessToken;
     }
 
+    // 저장된 토큰이 없으면 에러 발생 (자동 발급 안함)
+    throw new Error('저장된 토큰이 없습니다. 먼저 토큰을 발급받아야 합니다.');
+}
+
+// 새로운 토큰 수동 발급
+async function issueNewToken() {
     // 하루에 한 번만 발급 체크
     if (!canIssueToken()) {
         throw new Error('오늘 이미 토큰이 발급되었습니다. 내일 다시 시도해주세요.');
@@ -128,11 +134,54 @@ async function getAccessToken() {
         console.log('✅ 한국투자증권 API 토큰 발급 성공');
         console.log(`   - 발급 시간: ${new Date(now).toLocaleString('ko-KR')}`);
         console.log(`   - 만료 시간: ${new Date(tokenExpiry).toLocaleString('ko-KR')}`);
-        return accessToken;
+
+        return {
+            success: true,
+            message: '토큰 발급 성공',
+            issuedAt: new Date(now).toISOString(),
+            expiresAt: new Date(tokenExpiry).toISOString()
+        };
     } catch (error) {
         console.error('❌ 한국투자증권 API 토큰 발급 실패:', error.message);
         throw error;
     }
+}
+
+// 토큰 상태 확인
+function getTokenStatus() {
+    if (accessToken && tokenExpiry && Date.now() < tokenExpiry) {
+        const remainingHours = Math.floor((tokenExpiry - Date.now()) / 1000 / 60 / 60);
+        return {
+            hasToken: true,
+            isValid: true,
+            remainingHours: remainingHours,
+            expiresAt: new Date(tokenExpiry).toISOString()
+        };
+    }
+
+    // 파일에서 확인
+    try {
+        if (fs.existsSync(TOKEN_CACHE_PATH)) {
+            const cacheData = JSON.parse(fs.readFileSync(TOKEN_CACHE_PATH, 'utf8'));
+            if (cacheData.tokenExpiry && Date.now() < cacheData.tokenExpiry) {
+                const remainingHours = Math.floor((cacheData.tokenExpiry - Date.now()) / 1000 / 60 / 60);
+                return {
+                    hasToken: true,
+                    isValid: true,
+                    remainingHours: remainingHours,
+                    expiresAt: new Date(cacheData.tokenExpiry).toISOString()
+                };
+            }
+        }
+    } catch (error) {
+        // 무시
+    }
+
+    return {
+        hasToken: false,
+        isValid: false,
+        message: '토큰이 없거나 만료되었습니다.'
+    };
 }
 
 // 주식 현재가 조회
@@ -540,6 +589,8 @@ function getBongName(period) {
 
 module.exports = {
     getAccessToken,
+    issueNewToken,
+    getTokenStatus,
     getStockQuote,
     getStockChartData
 };

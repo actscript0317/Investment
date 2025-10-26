@@ -28,6 +28,11 @@ async function loadAccountBalance() {
         const data = await response.json();
 
         if (!response.ok) {
+            // 토큰 없음 에러 체크
+            if (data.message && data.message.includes('토큰')) {
+                showTokenError();
+                return;
+            }
             throw new Error(data.message || '잔고 조회에 실패했습니다.');
         }
 
@@ -42,7 +47,11 @@ async function loadAccountBalance() {
 
     } catch (error) {
         console.error('계좌 잔고 조회 오류:', error);
-        showError('계좌 잔고를 불러오는 중 오류가 발생했습니다: ' + error.message);
+        if (error.message.includes('토큰')) {
+            showTokenError();
+        } else {
+            showError('계좌 잔고를 불러오는 중 오류가 발생했습니다: ' + error.message);
+        }
     }
 }
 
@@ -135,6 +144,11 @@ async function loadTransactions() {
         const data = await response.json();
 
         if (!response.ok) {
+            // 토큰 없음 에러 체크
+            if (data.message && data.message.includes('토큰')) {
+                showTokenError();
+                return;
+            }
             throw new Error(data.message || '거래내역 조회에 실패했습니다.');
         }
 
@@ -143,7 +157,11 @@ async function loadTransactions() {
 
     } catch (error) {
         console.error('거래내역 조회 오류:', error);
-        showError('거래내역을 불러오는 중 오류가 발생했습니다: ' + error.message);
+        if (error.message.includes('토큰')) {
+            showTokenError();
+        } else {
+            showError('거래내역을 불러오는 중 오류가 발생했습니다: ' + error.message);
+        }
     }
 }
 
@@ -210,6 +228,36 @@ function formatCurrency(amount) {
 function formatDate(dateStr) {
     if (!dateStr || dateStr.length !== 8) return dateStr;
     return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+}
+
+// 토큰 에러 메시지 표시
+function showTokenError() {
+    const message = `
+⚠️ API 토큰이 없습니다!
+
+계좌 페이지를 사용하려면 먼저 토큰을 발급받아야 합니다.
+
+서버 터미널에서 다음 명령어를 실행하세요:
+curl -X POST http://localhost:3000/api/token/issue
+
+또는 브라우저 콘솔(F12)에서:
+fetch('http://localhost:3000/api/token/issue', { method: 'POST' })
+  .then(r => r.json())
+  .then(console.log)
+    `.trim();
+
+    alert(message);
+
+    // 페이지에 안내 메시지 표시
+    document.getElementById('accountSummary').innerHTML = `
+        <div class="col-span-3 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-yellow-800 mb-2">⚠️ 토큰 발급이 필요합니다</h3>
+            <p class="text-yellow-700 mb-4">계좌 정보를 조회하려면 먼저 한국투자증권 API 토큰을 발급받아야 합니다.</p>
+            <div class="bg-white p-4 rounded border border-yellow-300">
+                <p class="font-mono text-sm text-gray-800">curl -X POST http://localhost:3000/api/token/issue</p>
+            </div>
+        </div>
+    `;
 }
 
 // 에러 메시지 표시
