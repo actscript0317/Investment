@@ -160,6 +160,9 @@ async function loadStockData(stockCode) {
     hideError();
 
     try {
+        // 메인 컨텐츠 영역 표시
+        document.getElementById('mainContent').classList.remove('hidden');
+
         await Promise.all([
             loadStockInfo(stockCode),
             loadChartData(stockCode, currentPeriod)
@@ -236,9 +239,6 @@ async function loadStockInfo(stockCode) {
 
         // 종목 정보 표시
         displayStockInfo(data);
-
-        // 종목 정보 섹션 표시
-        document.getElementById('stockInfoSection').classList.remove('hidden');
     } catch (error) {
         console.error('종목 정보 로드 오류:', error);
         throw error;
@@ -247,7 +247,11 @@ async function loadStockInfo(stockCode) {
 
 // 종목 정보 화면에 표시
 function displayStockInfo(data) {
+    // 종목명 & 코드
     document.getElementById('stockName').textContent = data.name || '-';
+    document.getElementById('stockCode').textContent = data.code || '-';
+
+    // 현재가
     document.getElementById('currentPrice').textContent = formatPrice(data.currentPrice);
 
     // 전일대비
@@ -273,11 +277,26 @@ function displayStockInfo(data) {
         changeRateEl.className = 'text-lg font-semibold text-gray-600';
     }
 
-    // 시고저 및 거래량
+    // 시고저
     document.getElementById('openPrice').textContent = formatPrice(data.openPrice);
     document.getElementById('highPrice').textContent = formatPrice(data.highPrice);
     document.getElementById('lowPrice').textContent = formatPrice(data.lowPrice);
+
+    // 거래량 & 거래대금
     document.getElementById('volume').textContent = formatVolume(data.volume);
+    const tradeValue = data.currentPrice * data.volume;
+    document.getElementById('tradeValue').textContent = formatCurrency(tradeValue);
+
+    // 시가총액 (현재가 x 상장주식수) - API에서 제공되면 사용, 아니면 계산
+    const marketCap = data.marketCap || (data.currentPrice * (data.listedShares || 0));
+    document.getElementById('marketCap').textContent = formatCurrency(marketCap);
+
+    // 상장주식수
+    document.getElementById('listedShares').textContent = data.listedShares ? formatVolume(data.listedShares) : '-';
+
+    // 52주 최고/최저
+    document.getElementById('week52High').textContent = data.week52High ? formatPrice(data.week52High) : '-';
+    document.getElementById('week52Low').textContent = data.week52Low ? formatPrice(data.week52Low) : '-';
 }
 
 // 차트 데이터 로드
@@ -311,9 +330,6 @@ async function loadChartData(stockCode, period) {
 
         // 차트 그리기
         drawChart(data);
-
-        // 차트 섹션 표시
-        document.getElementById('chartSection').classList.remove('hidden');
     } catch (error) {
         console.error('차트 데이터 로드 오류:', error);
         throw error;
@@ -558,12 +574,25 @@ function formatPriceChange(change) {
 // 거래량 포맷팅
 function formatVolume(volume) {
     if (!volume && volume !== 0) return '-';
-    if (volume >= 1000000) {
-        return `${(volume / 1000000).toFixed(1)}M`;
-    } else if (volume >= 1000) {
-        return `${(volume / 1000).toFixed(1)}K`;
+    if (volume >= 100000000) {
+        return `${(volume / 100000000).toFixed(1)}억`;
+    } else if (volume >= 10000) {
+        return `${(volume / 10000).toFixed(1)}만`;
     }
     return volume.toLocaleString('ko-KR');
+}
+
+// 금액 포맷팅 (억/조 단위)
+function formatCurrency(amount) {
+    if (!amount && amount !== 0) return '-';
+    if (amount >= 1000000000000) {
+        return `${(amount / 1000000000000).toFixed(1)}조원`;
+    } else if (amount >= 100000000) {
+        return `${(amount / 100000000).toFixed(1)}억원`;
+    } else if (amount >= 10000) {
+        return `${(amount / 10000).toFixed(0)}만원`;
+    }
+    return amount.toLocaleString('ko-KR') + '원';
 }
 
 // 에러 메시지 표시

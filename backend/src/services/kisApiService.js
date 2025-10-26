@@ -223,7 +223,13 @@ async function getStockQuote(stockCode) {
             openPrice: parseInt(data.stck_oprc) || 0,
             highPrice: parseInt(data.stck_hgpr) || 0,
             lowPrice: parseInt(data.stck_lwpr) || 0,
-            volume: parseInt(data.acml_vol) || 0
+            volume: parseInt(data.acml_vol) || 0,
+            // 추가 정보
+            marketCap: parseInt(data.hts_avls) || 0,           // 시가총액
+            listedShares: parseInt(data.lstn_stcn) || 0,        // 상장주식수
+            week52High: parseInt(data.w52_hgpr) || 0,           // 52주 최고가
+            week52Low: parseInt(data.w52_lwpr) || 0,            // 52주 최저가
+            tradeValue: parseInt(data.acml_tr_pbmn) || 0        // 누적거래대금
         };
     } catch (error) {
         console.error('주식 시세 조회 오류:', error.message);
