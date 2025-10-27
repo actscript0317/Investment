@@ -14,9 +14,9 @@ async function checkAuthStatus() {
         const heroButton = document.getElementById('heroButton');
 
         if (session) {
-            // 로그인 상태: 네비게이션을 주식 조회, 로그아웃으로 변경
+            // 로그인 상태: 네비게이션을 계좌, 로그아웃으로 변경
             navButtons.innerHTML = `
-                <a href="/stock.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">주식 조회</a>
+                <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">내 계좌</a>
                 <button id="logoutBtn" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium">로그아웃</button>
             `;
 
@@ -26,9 +26,9 @@ async function checkAuthStatus() {
                 window.location.reload();
             });
 
-            // 히어로 버튼을 주식 조회로 변경
-            heroButton.href = '/stock.html';
-            heroButton.textContent = '주식 조회하기';
+            // 히어로 버튼을 계좌 페이지로 변경
+            heroButton.href = '/account.html';
+            heroButton.textContent = '내 계좌 보기';
         } else {
             // 비로그인 상태: 기본 네비게이션 유지
             navButtons.innerHTML = `

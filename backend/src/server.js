@@ -1,9 +1,26 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
+const fs = require('fs');
 const kisApiService = require('./services/kisApiService');
 const kisApi = require('./services/kisApi');
 require('dotenv').config();
+
+// Load stock list from file
+let stockList = [];
+try {
+    const stockData = fs.readFileSync(path.join(__dirname, 'data', 'stocks.json'), 'utf8');
+    stockList = JSON.parse(stockData);
+    console.log(`✅ ${stockList.length}개 종목 로드 완료`);
+} catch (error) {
+    console.error('❌ 종목 리스트 로드 실패:', error.message);
+    // Fallback to basic list
+    stockList = [
+        { code: '005930', name: '삼성전자' },
+        { code: '000660', name: 'SK하이닉스' },
+        { code: '035420', name: 'NAVER' }
+    ];
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -53,40 +70,6 @@ app.get('/api/stock/quote/:stockCode', async (req, res) => {
     }
 });
 
-// 주식 차트 데이터 조회
-app.get('/api/stock/chart/:stockCode', async (req, res) => {
-    try {
-        const { stockCode } = req.params;
-        const { period = 'D', loadAll } = req.query;
-        const shouldLoadAll = loadAll === 'true';
-
-        console.log(`📈 차트 데이터 조회: ${stockCode}, 기간: ${period}, 전체로드: ${shouldLoadAll}`);
-
-        // 실제 한국투자증권 API 호출
-        const chartData = await kisApiService.getStockChartData(stockCode, period, shouldLoadAll);
-
-        console.log(`✅ 차트 데이터 조회 성공: ${chartData.length}개 데이터`);
-        res.json(chartData);
-
-    } catch (error) {
-        console.error('❌ 차트 데이터 조회 실패:', error.message);
-
-        // 토큰 에러인 경우 명확한 메시지 반환
-        if (error.message && error.message.includes('토큰')) {
-            return res.status(401).json({
-                error: 'Token required',
-                message: '토큰이 필요합니다. 먼저 토큰을 발급받아주세요.',
-                needToken: true
-            });
-        }
-
-        res.status(500).json({
-            error: 'Failed to fetch stock chart',
-            message: error.message || '차트 데이터를 불러오는데 실패했습니다.'
-        });
-    }
-});
-
 // 토큰 상태 확인 API
 app.get('/api/token/status', (req, res) => {
     try {
@@ -124,52 +107,8 @@ app.get('/api/stock/search', async (req, res) => {
 
         const searchTerm = query.trim().toLowerCase();
 
-        // 한국 주요 종목 리스트 (실제로는 DB나 외부 API에서 가져와야 함)
-        const allStocks = [
-            { code: '005930', name: '삼성전자' },
-            { code: '000660', name: 'SK하이닉스' },
-            { code: '035420', name: 'NAVER' },
-            { code: '035720', name: '카카오' },
-            { code: '207940', name: '삼성바이오로직스' },
-            { code: '373220', name: 'LG에너지솔루션' },
-            { code: '005380', name: '현대차' },
-            { code: '006400', name: '삼성SDI' },
-            { code: '051910', name: 'LG화학' },
-            { code: '005490', name: 'POSCO홀딩스' },
-            { code: '068270', name: '셀트리온' },
-            { code: '028260', name: '삼성물산' },
-            { code: '012330', name: '현대모비스' },
-            { code: '066570', name: 'LG전자' },
-            { code: '096770', name: 'SK이노베이션' },
-            { code: '003550', name: 'LG' },
-            { code: '017670', name: 'SK텔레콤' },
-            { code: '034020', name: '두산에너빌리티' },
-            { code: '018260', name: '삼성에스디에스' },
-            { code: '009150', name: '삼성전기' },
-            { code: '032830', name: '삼성생명' },
-            { code: '003670', name: '포스코퓨처엠' },
-            { code: '011200', name: 'HMM' },
-            { code: '086790', name: '하나금융지주' },
-            { code: '105560', name: 'KB금융' },
-            { code: '055550', name: '신한지주' },
-            { code: '000270', name: '기아' },
-            { code: '024110', name: '기업은행' },
-            { code: '316140', name: '우리금융지주' },
-            { code: '010130', name: '고려아연' },
-            { code: '259960', name: '크래프톤' },
-            { code: '036570', name: '엔씨소프트' },
-            { code: '352820', name: '하이브' },
-            { code: '251270', name: '넷마블' },
-            { code: '326030', name: 'SK바이오팜' },
-            { code: '302440', name: 'SK바이오사이언스' },
-            { code: '328130', name: '루닛' },
-            { code: '086520', name: '에코프로' },
-            { code: '247540', name: '에코프로비엠' },
-            { code: '091990', name: '셀트리온헬스케어' }
-        ];
-
         // 종목 코드 또는 종목명으로 검색
-        const results = allStocks.filter(stock =>
+        const results = stockList.filter(stock =>
             stock.code.includes(searchTerm) ||
             stock.name.toLowerCase().includes(searchTerm) ||
             stock.name.includes(query.trim())
@@ -235,6 +174,13 @@ app.get('/api/account/transactions', async (req, res) => {
         console.log(`✅ 거래내역 조회 요청: ${start} ~ ${end}`);
         const transactionData = await kisApi.getTransactionHistory(accountNumber, start, end);
         console.log('✅ 거래내역 조회 성공');
+
+        // 데이터 샘플 로그 (디버깅용)
+        if (transactionData.output1 && transactionData.output1.length > 0) {
+            console.log('거래내역 샘플:', JSON.stringify(transactionData.output1[0], null, 2));
+            console.log(`총 ${transactionData.output1.length}건의 거래내역`);
+        }
+
         res.json(transactionData);
     } catch (error) {
         console.error('❌ 거래내역 조회 실패:', error.message);
@@ -278,6 +224,34 @@ app.get('/api/account/buying-power', async (req, res) => {
     }
 });
 
+// 주식 차트 데이터 조회 API
+app.get('/api/stock/chart/:stockCode', async (req, res) => {
+    try {
+        const { stockCode } = req.params;
+        const { startDate, endDate, period } = req.query;
+
+        console.log(`📊 차트 데이터 조회: ${stockCode}`);
+
+        // 기본값 설정
+        const end = endDate || new Date().toISOString().split('T')[0].replace(/-/g, '');
+        const start = startDate || (() => {
+            const date = new Date();
+            date.setDate(date.getDate() - 100); // 100일 전
+            return date.toISOString().split('T')[0].replace(/-/g, '');
+        })();
+
+        const chartData = await kisApi.getStockChart(stockCode, start, end, period || 'D');
+        console.log(`✅ 차트 데이터 조회 성공`);
+        res.json(chartData);
+    } catch (error) {
+        console.error('❌ 차트 데이터 조회 실패:', error.message);
+        res.status(500).json({
+            error: 'Failed to fetch chart data',
+            message: error.message
+        });
+    }
+});
+
 // Serve frontend HTML files
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/public', 'index.html'));
@@ -293,6 +267,14 @@ app.get('/login', (req, res) => {
 
 app.get('/account', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/public', 'account.html'));
+});
+
+app.get('/chart', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/public', 'chart.html'));
+});
+
+app.get('/history', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/public', 'history.html'));
 });
 
 // Start server

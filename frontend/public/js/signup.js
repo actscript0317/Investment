@@ -38,7 +38,7 @@ signupForm.addEventListener('submit', async (e) => {
             email: email,
             password: password,
             options: {
-                emailRedirectTo: `${window.location.origin}/stock.html`,
+                emailRedirectTo: `${window.location.origin}/account.html`,
                 data: {
                     email: email
                 },
