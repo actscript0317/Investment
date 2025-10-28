@@ -9,7 +9,7 @@ backend/.env
 frontend/.env
 
 # Build outputs
-frontend/public/css/output.css
+# frontend/public/css/output.css (CSS는 Git에 포함)
 
 # Logs
 *.log

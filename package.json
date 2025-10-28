@@ -4,7 +4,8 @@
   "description": "Stock Trading System with Node.js, Tailwind CSS, Supabase, and Korea Investment API",
   "scripts": {
     "install:all": "npm install --prefix backend && npm install --prefix frontend",
-    "start": "npm run install:all && cd backend && npm start",
+    "build": "npm run install:all && cd frontend && npm run build:css",
+    "start": "cd backend && npm start",
     "dev": "cd backend && npm run dev",
     "build:css": "cd frontend && npm run build:css",
     "watch:css": "cd frontend && npm run watch:css"
