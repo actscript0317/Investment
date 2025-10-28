@@ -27,7 +27,13 @@
       "Bash(npm start)",
       "Bash(node_modules.bintailwindcss -i ./src/input.css -o ./public/css/output.css --minify)",
       "Bash(npm run build:css:*)",
-      "Bash(timeout 5 curl:*)"
+      "Bash(timeout 5 curl:*)",
+      "Bash(netstat:*)",
+      "Bash(curl:*)",
+      "Bash(del account.html.backup)",
+      "Bash(node_modules.bintailwindcss -i ./public/css/input.css -o ./public/css/output.css --minify)",
+      "Bash(.node_modules.bintailwindcss -i ./public/css/input.css -o ./public/css/output.css --minify)",
+      "Bash(npm uninstall:*)"
     ],
     "deny": [],
     "ask": []

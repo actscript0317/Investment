@@ -172,12 +172,19 @@ function displayTransactions(transactions) {
         transactionsList.appendChild(dateMarker);
 
         // Separate transactions by type
-        const buyOnlyTxs = dateTransactions.filter(tx => tx.sellAmount === 0); // 매수만 한 거래
-        const profitTxs = dateTransactions.filter(tx => tx.sellAmount > 0 && tx.isProfit); // 익절
-        const lossTxs = dateTransactions.filter(tx => tx.sellAmount > 0 && !tx.isProfit); // 손절
+        const buyOnlyTxs = dateTransactions.filter(tx => tx.buyAmount > 0 && tx.sellAmount === 0); // 매수만 한 거래
+        const profitTxs = dateTransactions.filter(tx => tx.buyAmount > 0 && tx.sellAmount > 0 && tx.isProfit); // 익절
+        const lossTxs = dateTransactions.filter(tx => tx.buyAmount > 0 && tx.sellAmount > 0 && !tx.isProfit); // 손절
 
         // Combine buy-only with profit transactions (right side)
         const rightSideTxs = [...buyOnlyTxs, ...profitTxs];
+
+        console.log(`Date ${date}:`, {
+            total: dateTransactions.length,
+            buyOnly: buyOnlyTxs.length,
+            profit: profitTxs.length,
+            loss: lossTxs.length
+        });
 
         // Display profit/loss transactions in pairs
         const maxLength = Math.max(rightSideTxs.length, lossTxs.length);
@@ -228,15 +235,34 @@ function groupTransactionsByDate(transactions) {
 
 // Create Transaction Card
 function createTransactionCard(transaction, type) {
+    const cardId = `card-${transaction.date}-${transaction.stockCode}-${Math.random().toString(36).substr(2, 9)}`;
+
     // 매수만 한 경우 (매도금액이 0)
     if (type === 'buy') {
         return `
-            <div class="transaction-card profit-card" style="border-left: 4px solid #3b82f6; padding: 12px;">
+            <div class="transaction-card profit-card cursor-pointer" style="border-left: 4px solid #3b82f6; padding: 12px;" onclick="toggleCardDetails('${cardId}')">
                 <div class="profit-icon transaction-icon" style="background: #3b82f6;">💰</div>
-                <div class="flex items-center justify-between">
-                    <div>
-                        <div class="font-bold text-gray-900">${transaction.stockName} <span class="text-xs text-blue-600">보유중</span></div>
-                        <div class="text-xs text-gray-600">${transaction.buyAmount.toLocaleString()}원 × ${transaction.buyPrice.toLocaleString()}원</div>
+                <div>
+                    <div class="flex items-center justify-between">
+                        <div class="font-bold text-gray-900">${transaction.stockName}</div>
+                        <span class="text-xs text-blue-600 font-semibold">보유중</span>
+                    </div>
+                    <div class="text-xs text-gray-600 mt-1">매수금액: ${transaction.buyAmount.toLocaleString()}원</div>
+
+                    <!-- 상세 정보 (접힌 상태) -->
+                    <div id="${cardId}" class="hidden mt-3 pt-3 border-t border-gray-200 text-xs space-y-1">
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">매수수량:</span>
+                            <span class="font-medium">${transaction.quantity}주</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">매수평균가:</span>
+                            <span class="font-medium">${transaction.buyPrice.toLocaleString()}원</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-gray-600">종목코드:</span>
+                            <span class="font-medium">${transaction.stockCode}</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -251,23 +277,77 @@ function createTransactionCard(transaction, type) {
     const iconClass = isLoss ? 'loss-icon' : 'profit-icon';
 
     return `
-        <div class="transaction-card ${cardClass}" style="padding: 12px;">
+        <div class="transaction-card ${cardClass} cursor-pointer" style="padding: 12px;" onclick="toggleCardDetails('${cardId}')">
             <div class="${iconClass} transaction-icon">${icon}</div>
-            <div class="flex items-center justify-between">
-                <div>
-                    <div class="font-bold text-gray-900">${transaction.stockName} <span class="text-sm ${colorClass} font-semibold">${transaction.profitLossRate >= 0 ? '+' : ''}${transaction.profitLossRate.toFixed(2)}%</span></div>
-                    <div class="text-xs text-gray-600">${transaction.buyAmount.toLocaleString()}원 → ${transaction.profitLoss >= 0 ? '+' : ''}${transaction.profitLoss.toLocaleString()}원</div>
+            <div>
+                <div class="flex items-center justify-between">
+                    <div class="font-bold text-gray-900">${transaction.stockName}</div>
+                    <span class="text-sm ${colorClass} font-semibold">${transaction.profitLossRate >= 0 ? '+' : ''}${transaction.profitLossRate.toFixed(2)}%</span>
+                </div>
+                <div class="text-xs text-gray-600 mt-1">
+                    ${transaction.buyAmount.toLocaleString()}원 → ${transaction.profitLoss >= 0 ? '+' : ''}${transaction.profitLoss.toLocaleString()}원
+                </div>
+
+                <!-- 상세 정보 (접힌 상태) -->
+                <div id="${cardId}" class="hidden mt-3 pt-3 border-t border-gray-200 text-xs space-y-1">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">매수수량:</span>
+                        <span class="font-medium">${transaction.quantity}주</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">매수평균가:</span>
+                        <span class="font-medium">${transaction.buyPrice.toLocaleString()}원</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">매도가격:</span>
+                        <span class="font-medium">${transaction.sellPrice.toLocaleString()}원</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">매도금액:</span>
+                        <span class="font-medium">${transaction.sellAmount.toLocaleString()}원</span>
+                    </div>
+                    ${transaction.fee > 0 ? `
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">수수료:</span>
+                        <span class="font-medium">${transaction.fee.toLocaleString()}원</span>
+                    </div>
+                    ` : ''}
+                    ${transaction.tax > 0 ? `
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">세금:</span>
+                        <span class="font-medium">${transaction.tax.toLocaleString()}원</span>
+                    </div>
+                    ` : ''}
+                    <div class="flex justify-between pt-2 border-t border-gray-200">
+                        <span class="text-gray-700 font-semibold">실현손익:</span>
+                        <span class="font-bold ${colorClass}">${transaction.profitLoss >= 0 ? '+' : ''}${transaction.profitLoss.toLocaleString()}원</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">종목코드:</span>
+                        <span class="font-medium">${transaction.stockCode}</span>
+                    </div>
                 </div>
             </div>
         </div>
     `;
 }
 
+// Toggle card details
+window.toggleCardDetails = function(cardId) {
+    const detailsEl = document.getElementById(cardId);
+    if (detailsEl) {
+        detailsEl.classList.toggle('hidden');
+    }
+}
+
 // Update Summary
 function updateSummary(transactions) {
-    const totalTrades = transactions.length;
-    const profitTrades = transactions.filter(tx => tx.isProfit).length;
-    const lossTrades = transactions.filter(tx => !tx.isProfit).length;
+    // 매도한 거래만 카운트 (매수만 한 거래는 제외)
+    const completedTrades = transactions.filter(tx => tx.sellAmount > 0);
+
+    const totalTrades = completedTrades.length;
+    const profitTrades = completedTrades.filter(tx => tx.isProfit).length;
+    const lossTrades = completedTrades.filter(tx => !tx.isProfit).length;
 
     document.getElementById('totalTrades').textContent = totalTrades;
     document.getElementById('profitTrades').textContent = profitTrades;

@@ -53,12 +53,25 @@ function initializeChart() {
         data: {
             datasets: [{
                 label: '주가',
-                data: []
+                data: [],
+                color: {
+                    up: '#ef4444',    // 상승 - 빨강
+                    down: '#3b82f6',   // 하락 - 파랑
+                    unchanged: '#6b7280' // 보합 - 회색
+                },
+                borderColor: {
+                    up: '#dc2626',
+                    down: '#2563eb',
+                    unchanged: '#4b5563'
+                }
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 500
+            },
             interaction: {
                 intersect: false,
                 mode: 'index'
@@ -66,19 +79,40 @@ function initializeChart() {
             plugins: {
                 legend: {
                     display: true,
-                    position: 'top'
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        }
+                    }
                 },
                 tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    padding: 12,
+                    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+                    padding: 16,
+                    titleFont: {
+                        size: 14
+                    },
+                    bodyFont: {
+                        size: 13
+                    },
                     callbacks: {
+                        title: function(context) {
+                            const date = new Date(context[0].parsed.x);
+                            return date.toLocaleDateString('ko-KR', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                            });
+                        },
                         label: function(context) {
                             const data = context.raw;
                             return [
                                 `시가: ${data.o.toLocaleString()}원`,
                                 `고가: ${data.h.toLocaleString()}원`,
                                 `저가: ${data.l.toLocaleString()}원`,
-                                `종가: ${data.c.toLocaleString()}원`
+                                `종가: ${data.c.toLocaleString()}원`,
+                                `등락: ${(data.c - data.o).toLocaleString()}원 (${((data.c - data.o) / data.o * 100).toFixed(2)}%)`
                             ];
                         }
                     }
@@ -86,26 +120,48 @@ function initializeChart() {
             },
             scales: {
                 x: {
-                    type: 'time',
+                    type: 'timeseries',
                     time: {
                         unit: 'day',
+                        tooltipFormat: 'yyyy-MM-dd',
                         displayFormats: {
                             day: 'MM/dd',
                             week: 'MM/dd',
-                            month: 'YYYY/MM',
-                            year: 'YYYY'
+                            month: 'yyyy/MM',
+                            year: 'yyyy'
+                        }
+                    },
+                    ticks: {
+                        source: 'auto',
+                        autoSkip: true,
+                        autoSkipPadding: 50,
+                        maxRotation: 0,
+                        minRotation: 0,
+                        font: {
+                            size: 11
                         }
                     },
                     grid: {
-                        display: false
+                        display: true,
+                        drawOnChartArea: false,
+                        drawTicks: true,
+                        color: '#e5e7eb'
                     }
                 },
                 y: {
+                    position: 'right',
                     beginAtZero: false,
                     ticks: {
                         callback: function(value) {
                             return value.toLocaleString() + '원';
+                        },
+                        font: {
+                            size: 11
                         }
+                    },
+                    grid: {
+                        color: '#f3f4f6',
+                        drawTicks: false
                     }
                 }
             }
@@ -203,22 +259,36 @@ async function loadChartData(stockCode, stockName) {
             // Reverse data to show oldest to newest
             const chartData = data.output2.reverse();
 
-            // Convert to candlestick format
-            const candlestickData = chartData.map(item => ({
-                x: item.stck_bsop_date, // 날짜
-                o: parseInt(item.stck_oprc), // 시가
-                h: parseInt(item.stck_hgpr), // 고가
-                l: parseInt(item.stck_lwpr), // 저가
-                c: parseInt(item.stck_clpr)  // 종가
-            }));
+            // Convert to candlestick format with proper date parsing
+            const candlestickData = chartData.map(item => {
+                // Parse date string (YYYYMMDD) to Date object
+                const dateStr = item.stck_bsop_date;
+                const year = parseInt(dateStr.substring(0, 4));
+                const month = parseInt(dateStr.substring(4, 6)) - 1; // 0-based month
+                const day = parseInt(dateStr.substring(6, 8));
+
+                // Create date at noon to avoid timezone issues
+                const date = new Date(year, month, day, 12, 0, 0);
+
+                return {
+                    x: date.getTime(), // timestamp 사용
+                    o: parseInt(item.stck_oprc), // 시가
+                    h: parseInt(item.stck_hgpr), // 고가
+                    l: parseInt(item.stck_lwpr), // 저가
+                    c: parseInt(item.stck_clpr)  // 종가
+                };
+            });
+
+            console.log('Sample candle data:', candlestickData[0], candlestickData[1]);
+            console.log('Total candles:', candlestickData.length);
 
             chart.data.datasets[0].data = candlestickData;
             chart.data.datasets[0].label = `${stockName} (${getPeriodName(selectedPeriod)})`;
 
-            // x축 시간 단위 업데이트
-            updateTimeUnit(selectedPeriod);
+            // x축 시간 단위 및 설정 업데이트
+            updateChartTimeSettings(selectedPeriod, candlestickData);
 
-            chart.update();
+            chart.update('none'); // 애니메이션 없이 빠른 업데이트
         }
     } catch (error) {
         console.error('Chart data loading error:', error);
@@ -237,15 +307,74 @@ function getPeriodName(period) {
     return names[period] || '일봉';
 }
 
-// x축 시간 단위 업데이트
-function updateTimeUnit(period) {
-    const units = {
-        'D': 'day',
-        'W': 'week',
-        'M': 'month',
-        'Y': 'year'
+// x축 시간 단위 및 설정 업데이트
+function updateChartTimeSettings(period, data) {
+    const timeSettings = {
+        'D': {
+            unit: 'day',
+            stepSize: 1,
+            tooltipFormat: 'yyyy년 MM월 dd일',
+            displayFormats: {
+                day: 'MM/dd'
+            },
+            maxTicksLimit: 15
+        },
+        'W': {
+            unit: 'week',
+            stepSize: 1,
+            tooltipFormat: 'yyyy년 MM월 dd일',
+            displayFormats: {
+                week: 'MM/dd'
+            },
+            maxTicksLimit: 20
+        },
+        'M': {
+            unit: 'month',
+            stepSize: 1,
+            tooltipFormat: 'yyyy년 MM월',
+            displayFormats: {
+                month: 'yyyy/MM'
+            },
+            maxTicksLimit: 12
+        },
+        'Y': {
+            unit: 'year',
+            stepSize: 1,
+            tooltipFormat: 'yyyy년',
+            displayFormats: {
+                year: 'yyyy'
+            },
+            maxTicksLimit: 10
+        }
     };
-    chart.options.scales.x.time.unit = units[period] || 'day';
+
+    const settings = timeSettings[period] || timeSettings['D'];
+
+    chart.options.scales.x.time = {
+        ...chart.options.scales.x.time,
+        unit: settings.unit,
+        tooltipFormat: settings.tooltipFormat,
+        displayFormats: settings.displayFormats
+    };
+
+    chart.options.scales.x.ticks = {
+        ...chart.options.scales.x.ticks,
+        maxTicksLimit: settings.maxTicksLimit,
+        autoSkip: true,
+        autoSkipPadding: 20
+    };
+
+    // 데이터 범위 설정
+    if (data && data.length > 0) {
+        const firstDate = data[0].x;
+        const lastDate = data[data.length - 1].x;
+
+        // 앞뒤로 약간의 여백 추가
+        const padding = (lastDate - firstDate) * 0.02;
+
+        chart.options.scales.x.min = firstDate - padding;
+        chart.options.scales.x.max = lastDate + padding;
+    }
 }
 
 // Load Stock Info

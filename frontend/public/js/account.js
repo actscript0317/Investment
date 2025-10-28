@@ -3,25 +3,39 @@ const API_BASE_URL = 'http://localhost:3000/api';
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', async () => {
-    // 날짜 입력 초기값 설정 (최근 30일)
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-
-    document.getElementById('endDate').valueAsDate = endDate;
-    document.getElementById('startDate').valueAsDate = startDate;
-
     // 이벤트 리스너 등록
     document.getElementById('refreshBalanceBtn').addEventListener('click', loadAccountBalance);
-    document.getElementById('searchTransactionsBtn').addEventListener('click', loadTransactions);
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     document.getElementById('issueTokenBtn').addEventListener('click', issueToken);
+
+    // 모바일 로그아웃 버튼
+    const logoutBtnMobile = document.getElementById('logoutBtnMobile');
+    if (logoutBtnMobile) {
+        logoutBtnMobile.addEventListener('click', handleLogout);
+    }
+
+    // 토큰 상세 정보 토글
+    document.getElementById('toggleTokenDetails').addEventListener('click', toggleTokenDetails);
+
+    // 모바일 메뉴 설정
+    setupMobileMenu();
 
     // 초기 데이터 로드
     await checkTokenStatus();
     await loadAccountBalance();
-    await loadTransactions();
 });
+
+// 모바일 메뉴 설정
+function setupMobileMenu() {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+}
 
 // 계좌 잔고 조회
 async function loadAccountBalance() {
@@ -62,8 +76,12 @@ function updateAccountSummary(data) {
     // 한국투자증권 API 응답 구조에 맞춰 데이터 추출
     const output2 = data.output2 || [];
 
+    console.log('Account Summary Data:', output2); // 디버깅용
+
     if (output2.length > 0) {
         const summary = output2[0];
+
+        console.log('Full Summary Object:', summary); // 전체 필드 확인
 
         // 총 평가금액
         const totalAssets = parseInt(summary.tot_evlu_amt || 0);
@@ -73,13 +91,24 @@ function updateAccountSummary(data) {
         const totalProfit = parseInt(summary.evlu_pfls_smtl_amt || 0);
         const profitElement = document.getElementById('totalProfit');
         profitElement.textContent = formatCurrency(totalProfit);
-        profitElement.className = `text-2xl font-bold ${totalProfit >= 0 ? 'text-red-600' : 'text-blue-600'}`;
+        profitElement.className = `text-lg font-bold ${totalProfit >= 0 ? 'text-red-600' : 'text-blue-600'}`;
 
-        // 수익률
-        const profitRate = parseFloat(summary.tot_evlu_pfls_amt || 0);
+        // 수익률 계산 (평가손익 / 투자원금 * 100)
+        // 투자원금 = 총평가금액 - 평가손익
+        const totalInvestment = totalAssets - totalProfit;
+        let profitRate = 0;
+
+        if (totalInvestment > 0) {
+            profitRate = (totalProfit / totalInvestment) * 100;
+        }
+
         const profitRateElement = document.getElementById('totalProfitRate');
-        profitRateElement.textContent = profitRate.toFixed(2) + '%';
-        profitRateElement.className = `text-2xl font-bold ${profitRate >= 0 ? 'text-red-600' : 'text-blue-600'}`;
+
+        console.log('Calculated Profit Rate:', profitRate, 'Total Investment:', totalInvestment, 'Total Profit:', totalProfit); // 디버깅용
+
+        const profitSign = profitRate >= 0 ? '+' : '';
+        profitRateElement.textContent = profitSign + profitRate.toFixed(2) + '%';
+        profitRateElement.className = `text-lg font-bold ${profitRate >= 0 ? 'text-red-600' : 'text-blue-600'}`;
     } else {
         // 데이터가 없을 경우
         document.getElementById('totalAssets').textContent = formatCurrency(0);
@@ -88,23 +117,21 @@ function updateAccountSummary(data) {
     }
 }
 
-// 보유 종목 테이블 업데이트
+// 보유 종목 세로 카드 형식으로 업데이트
 function updateHoldingsTable(data) {
-    const tableBody = document.getElementById('holdingsTableBody');
+    const holdingsGrid = document.getElementById('holdingsGrid');
     const holdings = data.output1 || [];
 
     if (holdings.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                    보유 종목이 없습니다.
-                </td>
-            </tr>
+        holdingsGrid.innerHTML = `
+            <div class="text-center py-8 text-gray-500">
+                보유 종목이 없습니다.
+            </div>
         `;
         return;
     }
 
-    tableBody.innerHTML = holdings.map(stock => {
+    holdingsGrid.innerHTML = holdings.map(stock => {
         const stockName = stock.prdt_name || '알 수 없음';
         const quantity = parseInt(stock.hldg_qty || 0);
         const avgPrice = parseInt(stock.pchs_avg_pric || 0);
@@ -113,99 +140,54 @@ function updateHoldingsTable(data) {
         const profit = parseInt(stock.evlu_pfls_amt || 0);
         const profitRate = parseFloat(stock.evlu_pfls_rt || 0);
 
-        const profitColor = profit >= 0 ? 'text-red-600' : 'text-blue-600';
-        const profitSign = profit >= 0 ? '+' : '';
+        const isProfit = profit >= 0;
+        const profitColor = isProfit ? 'text-green-700' : 'text-blue-700';
+        const cardBg = isProfit ? 'bg-green-50' : 'bg-blue-50';
+        const borderColor = isProfit ? 'border-green-200' : 'border-blue-200';
+        const profitSign = isProfit ? '+' : '';
 
         return `
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${stockName}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatNumber(quantity)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(avgPrice)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(currentPrice)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(evalAmount)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${profitColor}">
-                    ${profitSign}${formatCurrency(profit)}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${profitColor}">
-                    ${profitSign}${profitRate.toFixed(2)}%
-                </td>
-            </tr>
+            <div class="${cardBg} border-2 ${borderColor} rounded-xl p-4 sm:p-5 hover:shadow-lg transition-all duration-300">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0 mb-3 sm:mb-4">
+                    <h3 class="text-base sm:text-lg font-bold text-gray-900">${stockName}</h3>
+                    <div class="text-left sm:text-right">
+                        <p class="text-xs text-gray-600">현재가</p>
+                        <p class="text-base sm:text-lg font-bold text-gray-900">${formatCurrency(currentPrice)}</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div class="bg-white bg-opacity-60 p-2 sm:p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 mb-1">보유수량</p>
+                        <p class="text-xs sm:text-sm font-semibold text-gray-900">${formatNumber(quantity)}주</p>
+                    </div>
+                    <div class="bg-white bg-opacity-60 p-2 sm:p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 mb-1">평균단가</p>
+                        <p class="text-xs sm:text-sm font-semibold text-gray-900">${formatCurrency(avgPrice)}</p>
+                    </div>
+                    <div class="bg-white bg-opacity-60 p-2 sm:p-3 rounded-lg">
+                        <p class="text-xs text-gray-600 mb-1">평가금액</p>
+                        <p class="text-xs sm:text-sm font-semibold text-gray-900">${formatCurrency(evalAmount)}</p>
+                    </div>
+                </div>
+
+                <div class="bg-white bg-opacity-80 rounded-lg p-3 sm:p-4 border ${borderColor}">
+                    <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                        <div>
+                            <p class="text-xs text-gray-600 mb-1">평가손익</p>
+                            <p class="text-base sm:text-lg font-bold ${profitColor}">${profitSign}${formatCurrency(profit)}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-xs text-gray-600 mb-1">수익률</p>
+                            <p class="text-base sm:text-lg font-bold ${profitColor}">${profitSign}${profitRate.toFixed(2)}%</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         `;
     }).join('');
 }
 
-// 거래내역 조회
-async function loadTransactions() {
-    try {
-        const startDate = document.getElementById('startDate').value.replace(/-/g, '');
-        const endDate = document.getElementById('endDate').value.replace(/-/g, '');
-
-        const response = await fetch(
-            `${API_BASE_URL}/account/transactions?startDate=${startDate}&endDate=${endDate}`
-        );
-        const data = await response.json();
-
-        if (!response.ok) {
-            // 토큰 없음 에러 체크
-            if (data.message && data.message.includes('토큰')) {
-                showTokenError();
-                return;
-            }
-            throw new Error(data.message || '거래내역 조회에 실패했습니다.');
-        }
-
-        console.log('Transaction Data:', data);
-        updateTransactionsTable(data);
-
-    } catch (error) {
-        console.error('거래내역 조회 오류:', error);
-        if (error.message.includes('토큰')) {
-            showTokenError();
-        } else {
-            showError('거래내역을 불러오는 중 오류가 발생했습니다: ' + error.message);
-        }
-    }
-}
-
-// 거래내역 테이블 업데이트
-function updateTransactionsTable(data) {
-    const tableBody = document.getElementById('transactionsTableBody');
-    const transactions = data.output || [];
-
-    if (transactions.length === 0) {
-        tableBody.innerHTML = `
-            <tr>
-                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                    조회된 거래내역이 없습니다.
-                </td>
-            </tr>
-        `;
-        return;
-    }
-
-    tableBody.innerHTML = transactions.map(txn => {
-        const date = txn.ord_dt || '-';
-        const stockName = txn.prdt_name || '알 수 없음';
-        const type = txn.sll_buy_dvsn_cd === '01' ? '매도' : '매수';
-        const typeColor = txn.sll_buy_dvsn_cd === '01' ? 'text-blue-600' : 'text-red-600';
-        const quantity = parseInt(txn.tot_ccld_qty || 0);
-        const price = parseInt(txn.avg_prvs || 0);
-        const amount = parseInt(txn.tot_ccld_amt || 0);
-
-        return `
-            <tr class="hover:bg-gray-50">
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    ${formatDate(date)}
-                </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${stockName}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold ${typeColor}">${type}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatNumber(quantity)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(price)}</td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(amount)}</td>
-            </tr>
-        `;
-    }).join('');
-}
 
 // 토큰 상태 확인
 async function checkTokenStatus() {
@@ -270,16 +252,20 @@ async function issueToken() {
 // 토큰 상태 UI 업데이트
 function updateTokenStatus(data) {
     const statusEl = document.getElementById('tokenStatus');
+    const statusInlineEl = document.getElementById('tokenStatusInline');
     const issueTimeEl = document.getElementById('tokenIssueTime');
     const expireTimeEl = document.getElementById('tokenExpireTime');
 
     if (data.hasToken) {
-        statusEl.innerHTML = `
+        const statusHTML = `
             <span class="inline-flex items-center">
                 <span class="w-3 h-3 rounded-full bg-green-500 mr-2"></span>
-                <span class="text-green-600">정상</span>
+                <span class="text-green-600 font-medium">정상</span>
             </span>
         `;
+
+        statusEl.innerHTML = statusHTML;
+        statusInlineEl.innerHTML = statusHTML;
 
         if (data.issuedAt) {
             issueTimeEl.textContent = formatDateTime(data.issuedAt);
@@ -289,12 +275,15 @@ function updateTokenStatus(data) {
             expireTimeEl.textContent = formatDateTime(data.expiresAt);
         }
     } else {
-        statusEl.innerHTML = `
+        const statusHTML = `
             <span class="inline-flex items-center">
                 <span class="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
-                <span class="text-red-600">미발급</span>
+                <span class="text-red-600 font-medium">미발급</span>
             </span>
         `;
+
+        statusEl.innerHTML = statusHTML;
+        statusInlineEl.innerHTML = statusHTML;
         issueTimeEl.textContent = '-';
         expireTimeEl.textContent = '-';
 
@@ -400,4 +389,18 @@ function showTokenError() {
 // 에러 메시지 표시
 function showError(message) {
     alert(message);
+}
+
+// 토큰 상세 정보 토글 함수
+function toggleTokenDetails() {
+    const detailsEl = document.getElementById('tokenDetails');
+    const iconEl = document.getElementById('toggleIcon');
+
+    if (detailsEl.classList.contains('hidden')) {
+        detailsEl.classList.remove('hidden');
+        iconEl.textContent = '▲';
+    } else {
+        detailsEl.classList.add('hidden');
+        iconEl.textContent = '▼';
+    }
 }
