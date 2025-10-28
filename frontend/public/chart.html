@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.1/dist/chartjs-chart-financial.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -55,6 +56,12 @@
                             <button class="period-btn px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300" data-period="M">월봉</button>
                             <button class="period-btn px-3 py-1 text-sm rounded bg-gray-200 hover:bg-gray-300" data-period="Y">년봉</button>
                         </div>
+                    </div>
+                    <div class="flex items-center justify-end space-x-2 mb-2">
+                        <button id="resetZoom" class="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded border border-gray-300">
+                            초기화
+                        </button>
+                        <span class="text-xs text-gray-500">마우스 휠로 확대/축소, Ctrl+드래그로 이동</span>
                     </div>
                     <div class="relative" style="height: 600px;">
                         <canvas id="stockChart"></canvas>

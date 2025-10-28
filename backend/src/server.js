@@ -228,23 +228,30 @@ app.get('/api/account/buying-power', async (req, res) => {
 app.get('/api/stock/chart/:stockCode', async (req, res) => {
     try {
         const { stockCode } = req.params;
-        const { startDate, endDate, period } = req.query;
+        const { period, loadAll } = req.query;
 
-        console.log(`📊 차트 데이터 조회: ${stockCode}`);
+        console.log(`📊 차트 데이터 조회: ${stockCode}, 기간: ${period}, 전체로드: ${loadAll}`);
 
-        // 기본값 설정
-        const end = endDate || new Date().toISOString().split('T')[0].replace(/-/g, '');
-        const start = startDate || (() => {
-            const date = new Date();
-            date.setDate(date.getDate() - 100); // 100일 전
-            return date.toISOString().split('T')[0].replace(/-/g, '');
-        })();
+        // loadAll이 'true'로 전달되면 전체 데이터 로드
+        const shouldLoadAll = loadAll === 'true';
+        const chartData = await kisApiService.getStockChartData(stockCode, period || 'D', shouldLoadAll);
 
-        const chartData = await kisApi.getStockChart(stockCode, start, end, period || 'D');
-        console.log(`✅ 차트 데이터 조회 성공`);
-        res.json(chartData);
+        console.log(`✅ 차트 데이터 조회 성공: ${chartData.length}개`);
+
+        // output2 형식으로 래핑하여 반환 (프론트엔드 호환성)
+        res.json({
+            output2: chartData.map(item => ({
+                stck_bsop_date: item.date.replace(/-/g, ''), // YYYY-MM-DD -> YYYYMMDD
+                stck_oprc: item.open.toString(),
+                stck_hgpr: item.high.toString(),
+                stck_lwpr: item.low.toString(),
+                stck_clpr: item.close.toString(),
+                acml_vol: item.volume.toString()
+            }))
+        });
     } catch (error) {
         console.error('❌ 차트 데이터 조회 실패:', error.message);
+        console.error('전체 오류:', error);
         res.status(500).json({
             error: 'Failed to fetch chart data',
             message: error.message

@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function setupEventListeners() {
     const searchInput = document.getElementById('stockSearch');
     const periodButtons = document.querySelectorAll('.period-btn');
+    const resetZoomBtn = document.getElementById('resetZoom');
 
     // Stock search
     let searchTimeout;
@@ -37,6 +38,13 @@ function setupEventListeners() {
         });
     });
 
+    // Reset zoom button
+    resetZoomBtn.addEventListener('click', () => {
+        if (chart) {
+            chart.resetZoom();
+        }
+    });
+
     // Click outside to close search results
     document.addEventListener('click', (e) => {
         if (!e.target.closest('#stockSearch') && !e.target.closest('#searchResults')) {
@@ -54,10 +62,14 @@ function initializeChart() {
             datasets: [{
                 label: '주가',
                 data: [],
+                barPercentage: 0.5,
+                categoryPercentage: 0.8,
+                barThickness: 'flex',
+                maxBarThickness: 8,
                 color: {
-                    up: '#ef4444',    // 상승 - 빨강
-                    down: '#3b82f6',   // 하락 - 파랑
-                    unchanged: '#6b7280' // 보합 - 회색
+                    up: '#ef4444',
+                    down: '#3b82f6',
+                    unchanged: '#6b7280'
                 },
                 borderColor: {
                     up: '#dc2626',
@@ -70,7 +82,7 @@ function initializeChart() {
             responsive: true,
             maintainAspectRatio: false,
             animation: {
-                duration: 500
+                duration: 300
             },
             interaction: {
                 intersect: false,
@@ -116,14 +128,31 @@ function initializeChart() {
                             ];
                         }
                     }
+                },
+                zoom: {
+                    pan: {
+                        enabled: true,
+                        mode: 'x',
+                        modifierKey: 'ctrl'
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true,
+                            speed: 0.1
+                        },
+                        pinch: {
+                            enabled: true
+                        },
+                        mode: 'x'
+                    }
                 }
             },
             scales: {
                 x: {
-                    type: 'timeseries',
+                    type: 'time',
                     time: {
                         unit: 'day',
-                        tooltipFormat: 'yyyy-MM-dd',
+                        tooltipFormat: 'yyyy년 MM월 dd일',
                         displayFormats: {
                             day: 'MM/dd',
                             week: 'MM/dd',
@@ -137,15 +166,17 @@ function initializeChart() {
                         autoSkipPadding: 50,
                         maxRotation: 0,
                         minRotation: 0,
+                        maxTicksLimit: 20,
                         font: {
                             size: 11
                         }
                     },
                     grid: {
                         display: true,
-                        drawOnChartArea: false,
+                        drawOnChartArea: true,
                         drawTicks: true,
-                        color: '#e5e7eb'
+                        color: '#e5e7eb',
+                        lineWidth: 1
                     }
                 },
                 y: {
@@ -218,35 +249,11 @@ window.selectStock = async function(code, name) {
 // Load Chart Data
 async function loadChartData(stockCode, stockName) {
     try {
-        // Calculate date range based on selected period
-        const endDate = new Date();
-        const startDate = new Date();
+        console.log(`📊 차트 데이터 로딩 시작: ${stockCode}, 기간: ${selectedPeriod}`);
 
-        // 기간별로 조회 기간 설정
-        switch(selectedPeriod) {
-            case 'D': // 일봉 - 최근 100일
-                startDate.setDate(startDate.getDate() - 100);
-                break;
-            case 'W': // 주봉 - 최근 2년
-                startDate.setFullYear(startDate.getFullYear() - 2);
-                break;
-            case 'M': // 월봉 - 최근 5년
-                startDate.setFullYear(startDate.getFullYear() - 5);
-                break;
-            case 'Y': // 년봉 - 최근 10년
-                startDate.setFullYear(startDate.getFullYear() - 10);
-                break;
-        }
-
-        const formatDate = (date) => {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}${month}${day}`;
-        };
-
+        // loadAll=true로 전체 데이터 요청
         const response = await fetch(
-            `/api/stock/chart/${stockCode}?startDate=${formatDate(startDate)}&endDate=${formatDate(endDate)}&period=${selectedPeriod}`
+            `/api/stock/chart/${stockCode}?period=${selectedPeriod}&loadAll=true`
         );
 
         if (!response.ok) {
@@ -254,8 +261,16 @@ async function loadChartData(stockCode, stockName) {
         }
 
         const data = await response.json();
+        console.log('📦 받은 데이터:', data);
+
+        if (data.error) {
+            console.error('❌ API 에러:', data.error, data.message);
+            throw new Error(data.message || 'API 오류 발생');
+        }
 
         if (data.output2 && data.output2.length > 0) {
+            console.log(`✅ ${data.output2.length}개의 캔들 데이터 처리 시작`);
+
             // Reverse data to show oldest to newest
             const chartData = data.output2.reverse();
 
@@ -271,7 +286,7 @@ async function loadChartData(stockCode, stockName) {
                 const date = new Date(year, month, day, 12, 0, 0);
 
                 return {
-                    x: date.getTime(), // timestamp 사용
+                    x: date, // Date 객체 사용
                     o: parseInt(item.stck_oprc), // 시가
                     h: parseInt(item.stck_hgpr), // 고가
                     l: parseInt(item.stck_lwpr), // 저가
@@ -279,8 +294,10 @@ async function loadChartData(stockCode, stockName) {
                 };
             });
 
-            console.log('Sample candle data:', candlestickData[0], candlestickData[1]);
-            console.log('Total candles:', candlestickData.length);
+            console.log('✅ 캔들 데이터 변환 완료');
+            console.log('첫 번째 캔들:', candlestickData[0]);
+            console.log('마지막 캔들:', candlestickData[candlestickData.length - 1]);
+            console.log('총 캔들 수:', candlestickData.length);
 
             chart.data.datasets[0].data = candlestickData;
             chart.data.datasets[0].label = `${stockName} (${getPeriodName(selectedPeriod)})`;
@@ -288,11 +305,17 @@ async function loadChartData(stockCode, stockName) {
             // x축 시간 단위 및 설정 업데이트
             updateChartTimeSettings(selectedPeriod, candlestickData);
 
-            chart.update('none'); // 애니메이션 없이 빠른 업데이트
+            console.log('🔄 차트 업데이트 시작...');
+            chart.update(); // 차트 업데이트
+            console.log('✅ 차트 업데이트 완료');
+        } else {
+            console.warn('⚠️ 데이터가 없습니다:', data);
+            alert('차트 데이터가 없습니다.');
         }
     } catch (error) {
-        console.error('Chart data loading error:', error);
-        alert('차트 데이터를 불러오는데 실패했습니다.');
+        console.error('❌ Chart data loading error:', error);
+        console.error('에러 스택:', error.stack);
+        alert(`차트 데이터를 불러오는데 실패했습니다.\n${error.message}`);
     }
 }
 
@@ -312,7 +335,6 @@ function updateChartTimeSettings(period, data) {
     const timeSettings = {
         'D': {
             unit: 'day',
-            stepSize: 1,
             tooltipFormat: 'yyyy년 MM월 dd일',
             displayFormats: {
                 day: 'MM/dd'
@@ -321,7 +343,6 @@ function updateChartTimeSettings(period, data) {
         },
         'W': {
             unit: 'week',
-            stepSize: 1,
             tooltipFormat: 'yyyy년 MM월 dd일',
             displayFormats: {
                 week: 'MM/dd'
@@ -330,7 +351,6 @@ function updateChartTimeSettings(period, data) {
         },
         'M': {
             unit: 'month',
-            stepSize: 1,
             tooltipFormat: 'yyyy년 MM월',
             displayFormats: {
                 month: 'yyyy/MM'
@@ -339,7 +359,6 @@ function updateChartTimeSettings(period, data) {
         },
         'Y': {
             unit: 'year',
-            stepSize: 1,
             tooltipFormat: 'yyyy년',
             displayFormats: {
                 year: 'yyyy'
@@ -350,54 +369,44 @@ function updateChartTimeSettings(period, data) {
 
     const settings = timeSettings[period] || timeSettings['D'];
 
-    chart.options.scales.x.time = {
-        ...chart.options.scales.x.time,
-        unit: settings.unit,
-        tooltipFormat: settings.tooltipFormat,
-        displayFormats: settings.displayFormats
-    };
-
-    chart.options.scales.x.ticks = {
-        ...chart.options.scales.x.ticks,
-        maxTicksLimit: settings.maxTicksLimit,
-        autoSkip: true,
-        autoSkipPadding: 20
-    };
-
-    // 데이터 범위 설정
-    if (data && data.length > 0) {
-        const firstDate = data[0].x;
-        const lastDate = data[data.length - 1].x;
-
-        // 앞뒤로 약간의 여백 추가
-        const padding = (lastDate - firstDate) * 0.02;
-
-        chart.options.scales.x.min = firstDate - padding;
-        chart.options.scales.x.max = lastDate + padding;
-    }
+    // x축 시간 설정 업데이트
+    chart.options.scales.x.time.unit = settings.unit;
+    chart.options.scales.x.time.tooltipFormat = settings.tooltipFormat;
+    chart.options.scales.x.time.displayFormats = settings.displayFormats;
+    chart.options.scales.x.ticks.maxTicksLimit = settings.maxTicksLimit;
 }
 
 // Load Stock Info
 async function loadStockInfo(stockCode) {
     try {
+        console.log(`📊 종목 정보 조회 시작: ${stockCode}`);
         const response = await fetch(`/api/stock/quote/${stockCode}`);
 
         if (!response.ok) {
-            throw new Error('Failed to fetch stock info');
+            const errorText = await response.text();
+            console.error(`❌ API 응답 실패 (${response.status}):`, errorText);
+            throw new Error(`Failed to fetch stock info: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('✅ 종목 정보 조회 성공:', data);
+
+        // API 응답 데이터 구조 확인 (camelCase 형식)
+        if (!data || !data.currentPrice) {
+            console.error('❌ 잘못된 데이터 형식:', data);
+            throw new Error('Invalid data format');
+        }
 
         // Update stock info section
         const stockInfo = document.getElementById('stockInfo');
-        const priceChange = parseInt(data.prdy_vrss);
-        const priceChangeRate = parseFloat(data.prdy_ctrt);
+        const priceChange = data.priceChange || 0;
+        const priceChangeRate = data.changeRate || 0;
         const isPositive = priceChange >= 0;
 
         stockInfo.innerHTML = `
             <div class="text-center">
                 <div class="text-4xl font-bold mb-2">
-                    ${parseInt(data.stck_prpr).toLocaleString()}
+                    ${data.currentPrice.toLocaleString()}
                     <span class="text-lg text-gray-500">원</span>
                 </div>
                 <div class="text-lg ${isPositive ? 'text-red-600' : 'text-blue-600'} font-semibold">
@@ -409,19 +418,19 @@ async function loadStockInfo(stockCode) {
             <div class="border-t pt-4 mt-4 space-y-2">
                 <div class="flex justify-between">
                     <span class="text-gray-600">시가</span>
-                    <span class="font-semibold">${parseInt(data.stck_oprc).toLocaleString()}원</span>
+                    <span class="font-semibold">${(data.openPrice || 0).toLocaleString()}원</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">고가</span>
-                    <span class="font-semibold text-red-600">${parseInt(data.stck_hgpr).toLocaleString()}원</span>
+                    <span class="font-semibold text-red-600">${(data.highPrice || 0).toLocaleString()}원</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">저가</span>
-                    <span class="font-semibold text-blue-600">${parseInt(data.stck_lwpr).toLocaleString()}원</span>
+                    <span class="font-semibold text-blue-600">${(data.lowPrice || 0).toLocaleString()}원</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">거래량</span>
-                    <span class="font-semibold">${parseInt(data.acml_vol).toLocaleString()}주</span>
+                    <span class="font-semibold">${(data.volume || 0).toLocaleString()}주</span>
                 </div>
             </div>
         `;
@@ -431,36 +440,44 @@ async function loadStockInfo(stockCode) {
         priceDetails.innerHTML = `
             <div class="space-y-2 text-sm">
                 <div class="flex justify-between">
-                    <span class="text-gray-600">전일종가</span>
-                    <span class="font-semibold">${parseInt(data.stck_sdpr).toLocaleString()}원</span>
-                </div>
-                <div class="flex justify-between">
                     <span class="text-gray-600">52주 최고</span>
-                    <span class="font-semibold">${parseInt(data.w52_hgpr).toLocaleString()}원</span>
+                    <span class="font-semibold">${(data.week52High || 0).toLocaleString()}원</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">52주 최저</span>
-                    <span class="font-semibold">${parseInt(data.w52_lwpr).toLocaleString()}원</span>
+                    <span class="font-semibold">${(data.week52Low || 0).toLocaleString()}원</span>
                 </div>
                 <div class="flex justify-between">
                     <span class="text-gray-600">시가총액</span>
-                    <span class="font-semibold">${(parseInt(data.hts_avls) / 100000000).toFixed(0)}억원</span>
+                    <span class="font-semibold">${((data.marketCap || 0) / 100000000).toFixed(0)}억원</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">PER</span>
-                    <span class="font-semibold">${parseFloat(data.per).toFixed(2)}</span>
+                    <span class="text-gray-600">상장주식수</span>
+                    <span class="font-semibold">${((data.listedShares || 0) / 1000).toFixed(0)}천주</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="text-gray-600">PBR</span>
-                    <span class="font-semibold">${parseFloat(data.pbr).toFixed(2)}</span>
+                    <span class="text-gray-600">거래대금</span>
+                    <span class="font-semibold">${((data.tradeValue || 0) / 100000000).toFixed(0)}억원</span>
                 </div>
             </div>
         `;
+
+        console.log('✅ 종목 정보 UI 업데이트 완료');
     } catch (error) {
-        console.error('Stock info loading error:', error);
-        document.getElementById('stockInfo').innerHTML = `
+        console.error('❌ Stock info loading error:', error);
+        const stockInfo = document.getElementById('stockInfo');
+        const priceDetails = document.getElementById('priceDetails');
+
+        stockInfo.innerHTML = `
             <div class="text-center text-red-500 py-8">
-                정보를 불러오는데 실패했습니다
+                정보를 불러오는데 실패했습니다<br>
+                <span class="text-sm">${error.message}</span>
+            </div>
+        `;
+
+        priceDetails.innerHTML = `
+            <div class="text-center text-gray-500 py-8">
+                데이터를 불러올 수 없습니다
             </div>
         `;
     }
