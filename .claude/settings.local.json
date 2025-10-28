@@ -33,7 +33,9 @@
       "Bash(del account.html.backup)",
       "Bash(node_modules.bintailwindcss -i ./public/css/input.css -o ./public/css/output.css --minify)",
       "Bash(.node_modules.bintailwindcss -i ./public/css/input.css -o ./public/css/output.css --minify)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
