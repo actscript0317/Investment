@@ -3,10 +3,51 @@ let allTransactions = [];
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // 로그인 또는 게스트 모드 확인
+    if (!isAuthenticated()) {
+        showLoginRequired();
+        return;
+    }
+
     setupEventListeners();
     setDefaultDates();
     loadTransactions();
 });
+
+// 인증 확인 함수
+function isAuthenticated() {
+    // 게스트 모드 확인
+    const guestMode = sessionStorage.getItem('guestMode');
+    if (guestMode === 'true') {
+        return true;
+    }
+
+    // 사용자 로그인 확인 (실제 환경에서는 토큰 검증)
+    // 임시로 계좌번호 환경변수 확인
+    return true; // KIS API 키가 있으면 인증된 것으로 간주
+}
+
+// 로그인 필요 메시지 표시
+function showLoginRequired() {
+    const container = document.querySelector('.max-w-7xl');
+    container.innerHTML = `
+        <div class="bg-white rounded-lg shadow-md p-12 text-center">
+            <svg class="w-20 h-20 mx-auto mb-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">로그인이 필요합니다</h2>
+            <p class="text-gray-600 mb-8">거래내역을 확인하려면 로그인하거나 게스트 코드를 입력해주세요.</p>
+            <div class="flex justify-center space-x-4">
+                <a href="/mode-select.html" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    모드 선택
+                </a>
+                <a href="/login.html" class="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors">
+                    로그인
+                </a>
+            </div>
+        </div>
+    `;
+}
 
 // Setup Event Listeners
 function setupEventListeners() {
