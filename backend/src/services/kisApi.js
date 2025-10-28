@@ -170,7 +170,7 @@ class KISApiClient {
   }
 
   /**
-   * 주식 일별 주문 체결 조회 (거래내역)
+   * 기간별 매매손익 현황 조회 (거래내역)
    * @param {string} accountNumber - 계좌번호 (ex: 50111234-01)
    * @param {string} startDate - 시작일자 (YYYYMMDD)
    * @param {string} endDate - 종료일자 (YYYYMMDD)
@@ -183,11 +183,11 @@ class KISApiClient {
       // 계좌번호를 앞 8자리와 뒤 2자리로 분리
       const [cano, acntPrdtCd] = accountNumber.split('-');
 
-      // 모의투자면 VTTC8001R, 실전이면 TTTC8001R
-      const trId = this.baseUrl.includes('vts') ? 'VTTC8001R' : 'TTTC8001R';
+      // 모의투자면 VTTC8715R, 실전이면 TTTC8715R
+      const trId = this.baseUrl.includes('vts') ? 'VTTC8715R' : 'TTTC8715R';
 
       const response = await axios.get(
-        `${this.baseUrl}/uapi/domestic-stock/v1/trading/inquire-daily-ccld`,
+        `${this.baseUrl}/uapi/domestic-stock/v1/trading/inquire-period-trade-profit`,
         {
           headers: {
             'Content-Type': 'application/json; charset=utf-8',
@@ -200,16 +200,11 @@ class KISApiClient {
           params: {
             CANO: cano,
             ACNT_PRDT_CD: acntPrdtCd,
+            SORT_DVSN: '02', // 정렬구분 (00: 최근, 01: 과거, 02: 최근)
             INQR_STRT_DT: startDate,
             INQR_END_DT: endDate,
-            SLL_BUY_DVSN_CD: '00', // 매도매수구분 (00: 전체, 01: 매도, 02: 매수)
-            INQR_DVSN: '00', // 조회구분 (00: 역순, 01: 정순)
-            PDNO: '', // 상품번호 (종목코드)
-            CCLD_DVSN: '00', // 체결구분 (00: 전체, 01: 체결, 02: 미체결)
-            ORD_GNO_BRNO: '', // 주문채번지점번호
-            ODNO: '', // 주문번호
-            INQR_DVSN_3: '00', // 조회구분3
-            INQR_DVSN_1: '', // 조회구분1
+            CBLC_DVSN: '00', // 잔고구분 (00: 전체)
+            PDNO: '', // 상품번호 (전체)
             CTX_AREA_FK100: '', // 연속조회검색조건100
             CTX_AREA_NK100: '' // 연속조회키100
           }

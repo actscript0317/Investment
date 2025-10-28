@@ -348,96 +348,79 @@ async function getStockChartData(stockCode, period = 'D', loadAll = false) {
     }
 }
 
-// 전체 히스토리 데이터 로드 (상장 이후 전체)
+// 전체 히스토리 데이터 로드 (상장 이후 전체) - 기간별 차트 API 사용
 async function loadAllHistoricalData(stockCode, periodDivCode, token) {
-    console.log(`📥 전체 ${getBongName(periodDivCode)} 데이터 로딩 시작...`);
+    console.log(`📥 전체 ${getBongName(periodDivCode)} 데이터 로딩 시작 (기간별 차트 API 사용)...`);
 
-    let allData = [];
-    let oldestDate = new Date(); // 오늘부터 시작
-    // 3년간의 데이터: 일봉 40번(~1200일), 주봉 5번(~150주=3년), 월봉 2번(~60개월=5년)
-    const maxIterations = periodDivCode === 'D' ? 40 : periodDivCode === 'W' ? 5 : 2;
+    try {
+        // 조회 종료일자 (오늘)
+        const endDate = new Date();
+        const endDateStr = formatDateToYYYYMMDD(endDate);
 
-    for (let i = 0; i < maxIterations; i++) {
-        try {
-            // 날짜 범위 계산
-            const endDate = new Date(oldestDate);
-            const startDate = new Date(oldestDate);
-
-            // 기간 타입에 따라 범위 설정
-            if (periodDivCode === 'D') {
-                startDate.setDate(endDate.getDate() - 30); // 30일 전
-            } else if (periodDivCode === 'W') {
-                startDate.setDate(endDate.getDate() - 210); // 30주 전 (약 7개월)
-            } else if (periodDivCode === 'M') {
-                startDate.setMonth(endDate.getMonth() - 30); // 30개월 전
-            }
-
-            const response = await axios.get(
-                `${KIS_BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-price`,
-                {
-                    headers: {
-                        'content-type': 'application/json; charset=utf-8',
-                        'authorization': `Bearer ${token}`,
-                        'appkey': KIS_APP_KEY,
-                        'appsecret': KIS_APP_SECRET,
-                        'tr_id': 'FHKST01010400',
-                        'custtype': 'P'
-                    },
-                    params: {
-                        FID_COND_MRKT_DIV_CODE: 'J',
-                        FID_INPUT_ISCD: stockCode,
-                        FID_PERIOD_DIV_CODE: periodDivCode,
-                        FID_ORG_ADJ_PRC: '0'
-                    }
-                }
-            );
-
-            const chartArray = response.data.output || [];
-
-            if (chartArray.length === 0) {
-                console.log(`✅ 전체 데이터 로딩 완료 (더 이상 데이터 없음, 반복: ${i + 1})`);
-                break;
-            }
-
-            // 중복 제거를 위해 날짜 기준으로 필터링
-            const newData = chartArray
-                .filter(item => {
-                    const itemDate = formatDateString(item.stck_bsop_date);
-                    return !allData.some(existing => existing.date === itemDate);
-                })
-                .map(item => ({
-                    date: formatDateString(item.stck_bsop_date),
-                    open: parseInt(item.stck_oprc) || 0,
-                    high: parseInt(item.stck_hgpr) || 0,
-                    low: parseInt(item.stck_lwpr) || 0,
-                    close: parseInt(item.stck_clpr) || 0,
-                    volume: parseInt(item.acml_vol) || 0
-                }));
-
-            allData = [...allData, ...newData];
-
-            // 가장 오래된 날짜 업데이트
-            if (chartArray.length > 0) {
-                const lastItem = chartArray[chartArray.length - 1];
-                oldestDate = new Date(formatDateString(lastItem.stck_bsop_date));
-            }
-
-            console.log(`📥 진행 중... (${i + 1}/${maxIterations}, 누적: ${allData.length}개)`);
-
-            // API 호출 제한 방지 (0.2초 대기)
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-        } catch (error) {
-            console.error(`❌ ${i + 1}번째 데이터 로딩 실패:`, error.message);
-            break;
+        // 조회 시작일자 (상장일 추정 - 충분히 과거로 설정)
+        const startDate = new Date();
+        if (periodDivCode === 'D') {
+            startDate.setFullYear(startDate.getFullYear() - 20); // 일봉: 20년 전
+        } else if (periodDivCode === 'W') {
+            startDate.setFullYear(startDate.getFullYear() - 30); // 주봉: 30년 전
+        } else if (periodDivCode === 'M') {
+            startDate.setFullYear(startDate.getFullYear() - 50); // 월봉: 50년 전
         }
+        const startDateStr = formatDateToYYYYMMDD(startDate);
+
+        console.log(`📅 조회 기간: ${startDateStr} ~ ${endDateStr}`);
+
+        const response = await axios.get(
+            `${KIS_BASE_URL}/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice`,
+            {
+                headers: {
+                    'content-type': 'application/json; charset=utf-8',
+                    'authorization': `Bearer ${token}`,
+                    'appkey': KIS_APP_KEY,
+                    'appsecret': KIS_APP_SECRET,
+                    'tr_id': 'FHKST03010100', // 주식현재가 일자별시세(기간별)
+                    'custtype': 'P'
+                },
+                params: {
+                    FID_COND_MRKT_DIV_CODE: 'J', // J:KRX
+                    FID_INPUT_ISCD: stockCode,
+                    FID_INPUT_DATE_1: startDateStr, // 조회 시작일자
+                    FID_INPUT_DATE_2: endDateStr,   // 조회 종료일자
+                    FID_PERIOD_DIV_CODE: periodDivCode, // D:일, W:주, M:월
+                    FID_ORG_ADJ_PRC: '0' // 0:수정주가미반영, 1:수정주가반영
+                }
+            }
+        );
+
+        const chartArray = response.data.output2 || [];
+
+        if (chartArray.length === 0) {
+            console.log(`⚠️ 데이터 없음`);
+            return [];
+        }
+
+        // 데이터 변환
+        const allData = chartArray.map(item => ({
+            date: formatDateString(item.stck_bsop_date),
+            open: parseInt(item.stck_oprc) || 0,
+            high: parseInt(item.stck_hgpr) || 0,
+            low: parseInt(item.stck_lwpr) || 0,
+            close: parseInt(item.stck_clpr) || 0,
+            volume: parseInt(item.acml_vol) || 0
+        }));
+
+        console.log(`✅ 전체 ${allData.length}개 데이터 로딩 완료`);
+
+        // 날짜순 정렬
+        allData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        return allData;
+
+    } catch (error) {
+        console.error('❌ 전체 데이터 로딩 실패:', error.message);
+        // 실패 시 빈 배열 반환
+        return [];
     }
-
-    // 날짜순 정렬
-    allData.sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    console.log(`✅ 전체 ${getBongName(periodDivCode)} 데이터 로딩 완료: ${allData.length}개`);
-    return allData;
 }
 
 // 데이터베이스에서 차트 데이터 조회
@@ -586,6 +569,14 @@ function formatDate(date) {
 function formatDateString(dateStr) {
     if (!dateStr || dateStr.length !== 8) return dateStr;
     return `${dateStr.substring(0, 4)}-${dateStr.substring(4, 6)}-${dateStr.substring(6, 8)}`;
+}
+
+// Date 객체를 YYYYMMDD 형식으로 변환
+function formatDateToYYYYMMDD(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}${month}${day}`;
 }
 
 // 봉 차트 이름 가져오기

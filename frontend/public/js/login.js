@@ -44,8 +44,8 @@ loginForm.addEventListener('submit', async (e) => {
             submitBtn.textContent = '로그인';
         } else {
             console.log('로그인 성공:', data);
-            // 로그인 성공 시 주식 조회 페이지로 이동
-            window.location.href = '/stock.html';
+            // 로그인 성공 시 계좌 페이지로 이동
+            window.location.href = '/account.html';
         }
     } catch (error) {
         showError('로그인 중 오류가 발생했습니다.');

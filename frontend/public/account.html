@@ -12,112 +12,129 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
-                    <a href="/" class="text-2xl font-bold text-blue-600">주식 트레이딩</a>
+                    <a href="/" class="text-xl sm:text-2xl font-bold text-blue-600">주식 트레이딩</a>
                 </div>
-                <div class="flex items-center space-x-4">
-                    <a href="/" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">홈</a>
-                    <a href="/stock.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">주식 조회</a>
-                    <a href="/account.html" class="text-blue-600 font-semibold px-3 py-2 rounded-md text-sm">내 계좌</a>
-                    <button id="logoutBtn" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium">로그아웃</button>
+                <div class="hidden sm:flex items-center space-x-2 sm:space-x-4">
+                    <a href="/" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">홈</a>
+                    <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
+                    <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
+                    <a href="/account.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">내 계좌</a>
+                    <button id="logoutBtn" class="text-gray-700 hover:text-red-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">로그아웃</button>
                 </div>
+                <!-- Mobile menu button -->
+                <div class="sm:hidden flex items-center">
+                    <button id="mobileMenuBtn" class="text-gray-700 hover:text-blue-600 p-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden sm:hidden bg-white border-t border-gray-200">
+            <div class="px-4 py-3 space-y-2">
+                <a href="/" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">홈</a>
+                <a href="/chart.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">차트</a>
+                <a href="/history.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">거래내역</a>
+                <a href="/account.html" class="block text-blue-600 font-semibold hover:bg-gray-50 px-3 py-2 rounded-md text-sm">내 계좌</a>
+                <button id="logoutBtnMobile" class="w-full text-left text-gray-700 hover:text-red-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">로그아웃</button>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
         <!-- Page Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">내 계좌</h1>
-            <p class="mt-2 text-gray-600">계좌 잔고 및 거래내역을 확인하세요</p>
+        <div class="mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">내 계좌</h1>
+            <p class="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">계좌 잔고 및 보유 종목을 확인하세요</p>
         </div>
 
-        <!-- Account Summary Card -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <div class="flex justify-between items-center mb-6">
-                <h2 class="text-xl font-semibold text-gray-900">계좌 요약</h2>
-                <button id="refreshBalanceBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">
-                    새로고침
-                </button>
-            </div>
-
-            <div id="accountSummary" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <p class="text-sm text-gray-600 mb-1">총 평가금액</p>
-                    <p id="totalAssets" class="text-2xl font-bold text-gray-900">로딩 중...</p>
+        <!-- Token Status Card (접기/펼치기 가능) -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-6 sm:mb-12">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                <div class="flex items-center gap-3 sm:gap-4 flex-1">
+                    <h2 class="text-sm sm:text-base font-medium text-gray-700">API 토큰</h2>
+                    <p id="tokenStatusInline" class="inline-flex items-center">
+                        <span class="w-2 h-2 rounded-full bg-gray-400 mr-2"></span>
+                        <span class="text-xs sm:text-sm text-gray-600">확인 중...</span>
+                    </p>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <p class="text-sm text-gray-600 mb-1">평가손익</p>
-                    <p id="totalProfit" class="text-2xl font-bold">로딩 중...</p>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <p class="text-sm text-gray-600 mb-1">수익률</p>
-                    <p id="totalProfitRate" class="text-2xl font-bold">로딩 중...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Holdings Table -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">보유 종목</h2>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">종목명</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">보유수량</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평균단가</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">현재가</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평가금액</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">평가손익</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수익률</th>
-                        </tr>
-                    </thead>
-                    <tbody id="holdingsTableBody" class="bg-white divide-y divide-gray-200">
-                        <tr>
-                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
-                                로딩 중...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Transaction History -->
-        <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-semibold text-gray-900">거래내역</h2>
-                <div class="flex space-x-2">
-                    <input type="date" id="startDate" class="border border-gray-300 rounded-md px-3 py-2 text-sm">
-                    <input type="date" id="endDate" class="border border-gray-300 rounded-md px-3 py-2 text-sm">
-                    <button id="searchTransactionsBtn" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm">
-                        조회
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button id="toggleTokenDetails" class="text-gray-500 hover:text-gray-700 px-2 py-1 text-xs sm:text-sm transition-colors">
+                        <span id="toggleIcon">▼</span> 상세
+                    </button>
+                    <button id="issueTokenBtn" class="bg-green-500 hover:bg-green-600 text-white font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-all shadow-sm hover:shadow">
+                        토큰 발급
                     </button>
                 </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">일자</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">종목명</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">구분</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">수량</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">체결가</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">체결금액</th>
-                        </tr>
-                    </thead>
-                    <tbody id="transactionsTableBody" class="bg-white divide-y divide-gray-200">
-                        <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                로딩 중...
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+
+            <!-- 접기/펼치기 가능한 상세 정보 -->
+            <div id="tokenDetails" class="hidden mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4 border-t border-gray-100">
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500 mb-1">상태</p>
+                    <p id="tokenStatus" class="text-sm font-medium text-gray-900">
+                        <span class="inline-flex items-center">
+                            <span class="w-2 h-2 rounded-full bg-gray-400 mr-1.5"></span>
+                            확인 중
+                        </span>
+                    </p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500 mb-1">발급 시간</p>
+                    <p id="tokenIssueTime" class="text-xs sm:text-sm font-medium text-gray-900">-</p>
+                </div>
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <p class="text-xs text-gray-500 mb-1">만료 시간</p>
+                    <p id="tokenExpireTime" class="text-xs sm:text-sm font-medium text-gray-900">-</p>
+                </div>
+            </div>
+
+            <div id="tokenMessage" class="mt-4 p-3 rounded-lg hidden">
+                <!-- Message will be inserted here -->
             </div>
         </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+            <!-- 계좌 요약 (왼쪽 1/5) -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+                    <div class="flex justify-between items-center mb-3 sm:mb-4">
+                        <h2 class="text-sm sm:text-base font-semibold text-gray-900">계좌 요약</h2>
+                        <button id="refreshBalanceBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg text-xs transition-colors">
+                            새로고침
+                        </button>
+                    </div>
+                    <div id="accountSummary" class="space-y-2 sm:space-y-3">
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-lg">
+                            <p class="text-xs text-gray-600 mb-1">총 평가금액</p>
+                            <p id="totalAssets" class="text-base sm:text-lg font-bold text-gray-900">로딩 중...</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-3 rounded-lg">
+                            <p class="text-xs text-gray-600 mb-1">평가손익</p>
+                            <p id="totalProfit" class="text-base sm:text-lg font-bold">로딩 중...</p>
+                        </div>
+                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-3 rounded-lg">
+                            <p class="text-xs text-gray-600 mb-1">수익률</p>
+                            <p id="totalProfitRate" class="text-base sm:text-lg font-bold">로딩 중...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 보유 종목 (오른쪽 4/5 - 세로 카드 형식) -->
+            <div class="lg:col-span-4">
+                <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">보유 종목</h2>
+                <div id="holdingsGrid" class="space-y-3 max-w-full lg:max-w-4xl">
+                    <div class="text-center py-8 text-gray-400 text-sm">
+                        로딩 중...
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <!-- Footer -->
