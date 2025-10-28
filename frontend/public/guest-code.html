@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게스트 코드 입력 - 주식 트레이딩 시스템</title>
+    <link rel="stylesheet" href="/css/output.css">
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full">
+        <!-- 뒤로 가기 -->
+        <button onclick="window.location.href='/mode-select.html'"
+                class="mb-6 flex items-center text-gray-600 hover:text-gray-900 transition-colors">
+            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+            </svg>
+            모드 선택으로 돌아가기
+        </button>
+
+        <!-- 메인 카드 -->
+        <div class="bg-white rounded-2xl shadow-2xl p-8">
+            <!-- 아이콘 -->
+            <div class="flex justify-center mb-6">
+                <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center">
+                    <svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 제목 -->
+            <h1 class="text-3xl font-bold text-center text-gray-900 mb-2">게스트 모드</h1>
+            <p class="text-center text-gray-600 mb-8">게스트 코드를 입력해주세요</p>
+
+            <!-- 에러 메시지 -->
+            <div id="errorMessage" class="hidden mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div class="flex items-center">
+                    <svg class="w-5 h-5 text-red-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span id="errorText" class="text-red-700 text-sm"></span>
+                </div>
+            </div>
+
+            <!-- 코드 입력 폼 -->
+            <form id="guestCodeForm" onsubmit="handleSubmit(event)">
+                <div class="mb-6">
+                    <label for="guestCode" class="block text-sm font-medium text-gray-700 mb-2">
+                        게스트 코드
+                    </label>
+                    <input
+                        type="text"
+                        id="guestCode"
+                        name="guestCode"
+                        placeholder="예: ABC-123-XYZ"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-center text-lg font-mono tracking-wider uppercase"
+                        required
+                        maxlength="20"
+                    >
+                    <p class="mt-2 text-xs text-gray-500">
+                        게스트 코드는 대소문자를 구분하지 않습니다
+                    </p>
+                </div>
+
+                <!-- 제출 버튼 -->
+                <button
+                    type="submit"
+                    id="submitBtn"
+                    class="w-full py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-4 focus:ring-purple-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <span id="btnText">입장하기</span>
+                    <span id="btnLoading" class="hidden">
+                        <svg class="animate-spin inline-block w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        확인 중...
+                    </span>
+                </button>
+            </form>
+
+            <!-- 게스트 코드 안내 -->
+            <div class="mt-8 p-4 bg-purple-50 rounded-lg">
+                <h3 class="text-sm font-semibold text-purple-900 mb-2">게스트 코드는 어디서 받나요?</h3>
+                <p class="text-xs text-purple-700">
+                    게스트 코드는 사용자가 본인의 포트폴리오를 공유할 때 생성됩니다.
+                    포트폴리오를 공유받은 경우 해당 코드를 입력해주세요.
+                </p>
+            </div>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="mt-6 text-center text-sm text-gray-500">
+            <p>게스트 모드에서는 조회만 가능하며 거래는 불가능합니다</p>
+        </div>
+    </div>
+
+    <script src="/js/guest-code.js"></script>
+</body>
+</html>

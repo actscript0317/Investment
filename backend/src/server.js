@@ -259,9 +259,120 @@ app.get('/api/stock/chart/:stockCode', async (req, res) => {
     }
 });
 
+// Guest Mode API
+// 게스트 코드 저장소 (실제 환경에서는 데이터베이스 사용)
+const guestCodes = new Map();
+
+// 게스트 코드 생성 API (사용자가 자신의 포트폴리오를 공유할 때 사용)
+app.post('/api/guest/generate', (req, res) => {
+    try {
+        const { accountNumber } = req.body;
+
+        if (!accountNumber) {
+            return res.status(400).json({
+                error: 'Account number is required',
+                message: '계좌번호가 필요합니다.'
+            });
+        }
+
+        // 랜덤 게스트 코드 생성 (형식: ABC-123-XYZ)
+        const generateCode = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            const part1 = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+            const part2 = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+            const part3 = Array.from({ length: 3 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+            return `${part1}-${part2}-${part3}`;
+        };
+
+        let guestCode;
+        // 중복되지 않는 코드 생성
+        do {
+            guestCode = generateCode();
+        } while (guestCodes.has(guestCode));
+
+        // 게스트 코드와 계좌번호 매핑 저장 (24시간 유효)
+        guestCodes.set(guestCode, {
+            accountNumber,
+            createdAt: Date.now(),
+            expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24시간
+        });
+
+        console.log(`✅ 게스트 코드 생성: ${guestCode} for ${accountNumber}`);
+
+        res.json({
+            success: true,
+            guestCode,
+            expiresIn: '24시간'
+        });
+    } catch (error) {
+        console.error('❌ 게스트 코드 생성 오류:', error);
+        res.status(500).json({
+            error: 'Failed to generate guest code',
+            message: error.message
+        });
+    }
+});
+
+// 게스트 코드 검증 API
+app.post('/api/guest/verify', (req, res) => {
+    try {
+        const { guestCode } = req.body;
+
+        if (!guestCode) {
+            return res.status(400).json({
+                valid: false,
+                message: '게스트 코드를 입력해주세요.'
+            });
+        }
+
+        const codeData = guestCodes.get(guestCode.toUpperCase());
+
+        if (!codeData) {
+            return res.json({
+                valid: false,
+                message: '올바르지 않은 게스트 코드입니다.'
+            });
+        }
+
+        // 만료 확인
+        if (Date.now() > codeData.expiresAt) {
+            guestCodes.delete(guestCode.toUpperCase());
+            return res.json({
+                valid: false,
+                message: '만료된 게스트 코드입니다.'
+            });
+        }
+
+        console.log(`✅ 게스트 코드 검증 성공: ${guestCode}`);
+
+        res.json({
+            valid: true,
+            accountNumber: codeData.accountNumber,
+            message: '유효한 게스트 코드입니다.'
+        });
+    } catch (error) {
+        console.error('❌ 게스트 코드 검증 오류:', error);
+        res.status(500).json({
+            valid: false,
+            message: '서버 오류가 발생했습니다.'
+        });
+    }
+});
+
+// 만료된 게스트 코드 정리 (1시간마다)
+setInterval(() => {
+    const now = Date.now();
+    for (const [code, data] of guestCodes.entries()) {
+        if (now > data.expiresAt) {
+            guestCodes.delete(code);
+            console.log(`🗑️ 만료된 게스트 코드 삭제: ${code}`);
+        }
+    }
+}, 60 * 60 * 1000); // 1시간
+
 // Serve frontend HTML files
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/public', 'index.html'));
+    res.sendFile(path.join(__dirname, '../../frontend/public', 'mode-select.html'));
 });
 
 app.get('/signup', (req, res) => {
