@@ -22,60 +22,16 @@ function setupMobileMenu() {
     }
 }
 
-// 로그인 상태 확인
+// 인증 상태 확인 (더 이상 필요 없음 - 공개 접근)
 async function checkAuthStatus() {
-    try {
-        const { data: { session } } = await supabase.auth.getSession();
-
-        const navButtons = document.getElementById('navButtons');
-
-        if (session) {
-            // 로그인 상태: 네비게이션을 계좌, 로그아웃으로 변경
-            navButtons.innerHTML = `
-                <a href="/" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">모드 선택</a>
-                <a href="/home.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">홈</a>
-                <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
-                <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
-                <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">내 계좌</a>
-                <button id="logoutBtn" class="text-gray-700 hover:text-red-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">로그아웃</button>
-            `;
-
-            // 로그아웃 버튼 이벤트 리스너
-            document.getElementById('logoutBtn').addEventListener('click', async () => {
-                await supabase.auth.signOut();
-                window.location.reload();
-            });
-        } else {
-            // 비로그인 상태: 기본 네비게이션 유지
-            navButtons.innerHTML = `
-                <a href="/" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">모드 선택</a>
-                <a href="/home.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">홈</a>
-                <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
-                <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
-                <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">내 계좌</a>
-                <a href="/login.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">로그인</a>
-                <a href="/signup.html" class="bg-blue-600 text-white hover:bg-blue-700 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium">회원가입</a>
-            `;
-        }
-    } catch (error) {
-        console.error('세션 확인 오류:', error);
-    }
+    // 네비게이션은 HTML에 고정되어 있으므로 변경 불필요
+    return;
 }
 
 // 계좌 잔고 조회 및 게이지바 업데이트
 async function loadAccountBalance() {
     try {
-        // 게스트 모드 확인
-        const guestMode = sessionStorage.getItem('guestMode');
-        const guestAccountNumber = sessionStorage.getItem('guestAccountNumber');
-
-        let url = `${API_BASE_URL}/account/balance`;
-
-        // 게스트 모드인 경우 게스트 계좌번호 사용
-        if (guestMode === 'true' && guestAccountNumber) {
-            url += `?accountNumber=${guestAccountNumber}`;
-        }
-
+        const url = `${API_BASE_URL}/account/balance`;
         const response = await fetch(url);
         const data = await response.json();
 

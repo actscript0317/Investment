@@ -5,9 +5,22 @@ let selectedPeriod = 'D'; // D: 일봉, W: 주봉, M: 월봉, Y: 년봉
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    setupMobileMenu();
     setupEventListeners();
     initializeChart();
 });
+
+// Setup Mobile Menu
+function setupMobileMenu() {
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    if (mobileMenuBtn && mobileMenu) {
+        mobileMenuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+    }
+}
 
 // Setup Event Listeners
 function setupEventListeners() {

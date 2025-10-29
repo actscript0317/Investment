@@ -36,7 +36,8 @@
       "Bash(npm uninstall:*)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(move:*)"
+      "Bash(move:*)",
+      "Bash(timeout 3 bash:*)"
     ],
     "deny": [],
     "ask": []

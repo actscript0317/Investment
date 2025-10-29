@@ -14,17 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTransactions();
 });
 
-// 인증 확인 함수
+// 인증 확인 함수 (공개 접근 허용)
 function isAuthenticated() {
-    // 게스트 모드 확인
-    const guestMode = sessionStorage.getItem('guestMode');
-    if (guestMode === 'true') {
-        return true;
-    }
-
-    // 사용자 로그인 확인 (실제 환경에서는 토큰 검증)
-    // 임시로 계좌번호 환경변수 확인
-    return true; // KIS API 키가 있으면 인증된 것으로 간주
+    return true; // 누구나 접근 가능
 }
 
 // 로그인 필요 메시지 표시
@@ -101,17 +93,7 @@ async function loadTransactions() {
         const startDate = document.getElementById('startDate').value.replace(/-/g, '');
         const endDate = document.getElementById('endDate').value.replace(/-/g, '');
 
-        // 게스트 모드 확인
-        const guestMode = sessionStorage.getItem('guestMode');
-        const guestAccountNumber = sessionStorage.getItem('guestAccountNumber');
-
-        let url = `/api/account/transactions?startDate=${startDate}&endDate=${endDate}`;
-
-        // 게스트 모드인 경우 게스트 계좌번호 추가
-        if (guestMode === 'true' && guestAccountNumber) {
-            url += `&accountNumber=${guestAccountNumber}`;
-        }
-
+        const url = `/api/account/transactions?startDate=${startDate}&endDate=${endDate}`;
         const response = await fetch(url);
 
         if (!response.ok) {

@@ -15,12 +15,10 @@
                     <a href="/home.html" class="text-xl sm:text-2xl font-bold text-blue-600">주식 트레이딩</a>
                 </div>
                 <div class="hidden sm:flex items-center space-x-2 sm:space-x-4">
-                    <a href="/" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">모드 선택</a>
                     <a href="/home.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">홈</a>
                     <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
                     <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
                     <a href="/account.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">내 계좌</a>
-                    <button id="logoutBtn" class="text-gray-700 hover:text-red-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">로그아웃</button>
                 </div>
                 <!-- Mobile menu button -->
                 <div class="sm:hidden flex items-center">
@@ -35,12 +33,10 @@
         <!-- Mobile menu -->
         <div id="mobileMenu" class="hidden sm:hidden bg-white border-t border-gray-200">
             <div class="px-4 py-3 space-y-2">
-                <a href="/" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">모드 선택</a>
                 <a href="/home.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">홈</a>
                 <a href="/chart.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">차트</a>
                 <a href="/history.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">거래내역</a>
                 <a href="/account.html" class="block text-blue-600 font-semibold hover:bg-gray-50 px-3 py-2 rounded-md text-sm">내 계좌</a>
-                <button id="logoutBtnMobile" class="w-full text-left text-gray-700 hover:text-red-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">로그아웃</button>
             </div>
         </div>
     </nav>
@@ -96,63 +92,6 @@
 
             <div id="tokenMessage" class="mt-4 p-3 rounded-lg hidden">
                 <!-- Message will be inserted here -->
-            </div>
-        </div>
-
-        <!-- Guest Code Card -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-6 sm:mb-12">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
-                <div class="flex items-center gap-3 sm:gap-4">
-                    <h2 class="text-sm sm:text-base font-medium text-gray-700">게스트 코드</h2>
-                    <span class="text-xs text-gray-500">포트폴리오 공유</span>
-                    <button id="toggleGuestCodeDetails" class="text-gray-500 hover:text-gray-700 transition-colors text-sm">
-                        <span id="toggleGuestCodeIcon">▼</span>
-                    </button>
-                </div>
-                <button id="generateGuestCodeBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-medium px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm transition-all shadow-sm hover:shadow">
-                    코드 발급
-                </button>
-            </div>
-
-            <!-- 게스트 코드 상세 영역 -->
-            <div id="guestCodeDetails" class="hidden">
-                <!-- 게스트 코드 표시 영역 -->
-                <div id="guestCodeDisplay" class="hidden mb-4">
-                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-4 sm:p-6 rounded-lg border-2 border-purple-200">
-                        <div class="text-center mb-4">
-                            <p class="text-xs sm:text-sm text-gray-600 mb-2">다른 사용자와 공유할 수 있는 코드</p>
-                            <div class="bg-white px-4 py-3 rounded-lg shadow-sm border border-purple-300 inline-block">
-                                <p id="guestCodeValue" class="text-xl sm:text-2xl font-bold text-purple-600 tracking-wider font-mono"></p>
-                            </div>
-                        </div>
-                        <div class="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
-                            <button id="copyGuestCodeBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                                </svg>
-                                복사
-                            </button>
-                            <button id="shareGuestCodeBtn" class="bg-white hover:bg-gray-50 text-purple-600 border border-purple-300 px-4 py-2 rounded-lg text-sm transition-colors">
-                                공유
-                            </button>
-                        </div>
-                        <div class="mt-4 text-center">
-                            <p class="text-xs text-gray-500">유효기간: <span id="guestCodeExpiry" class="font-semibold text-green-600">영구</span></p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 안내 메시지 -->
-                <div id="guestCodeInfo" class="bg-gray-50 p-4 rounded-lg">
-                    <p class="text-sm text-gray-600 mb-2">💡 게스트 코드 안내</p>
-                    <ul class="text-xs text-gray-500 space-y-1 ml-4">
-                        <li>• 계좌당 하나의 고유한 코드가 생성됩니다</li>
-                        <li>• 다른 사용자가 내 포트폴리오를 조회할 수 있습니다</li>
-                        <li>• 거래내역과 보유 종목을 확인할 수 있습니다</li>
-                        <li>• 코드는 영구적으로 유효합니다</li>
-                        <li>• 계좌번호는 공유되지 않습니다</li>
-                    </ul>
-                </div>
             </div>
         </div>
 

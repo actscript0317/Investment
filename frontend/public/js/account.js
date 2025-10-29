@@ -5,25 +5,10 @@ const API_BASE_URL = 'http://localhost:3000/api';
 document.addEventListener('DOMContentLoaded', async () => {
     // 이벤트 리스너 등록
     document.getElementById('refreshBalanceBtn').addEventListener('click', loadAccountBalance);
-    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     document.getElementById('issueTokenBtn').addEventListener('click', issueToken);
-
-    // 모바일 로그아웃 버튼
-    const logoutBtnMobile = document.getElementById('logoutBtnMobile');
-    if (logoutBtnMobile) {
-        logoutBtnMobile.addEventListener('click', handleLogout);
-    }
 
     // 토큰 상세 정보 토글
     document.getElementById('toggleTokenDetails').addEventListener('click', toggleTokenDetails);
-
-    // 게스트 코드 상세 정보 토글
-    document.getElementById('toggleGuestCodeDetails').addEventListener('click', toggleGuestCodeDetails);
-
-    // 게스트 코드 이벤트 리스너
-    document.getElementById('generateGuestCodeBtn').addEventListener('click', generateGuestCode);
-    document.getElementById('copyGuestCodeBtn')?.addEventListener('click', copyGuestCode);
-    document.getElementById('shareGuestCodeBtn')?.addEventListener('click', shareGuestCode);
 
     // 모바일 메뉴 설정
     setupMobileMenu();
@@ -336,15 +321,6 @@ function showTokenMessage(type, message) {
     }, 5000);
 }
 
-// 로그아웃 처리
-function handleLogout() {
-    // 로그아웃 로직 (예: 세션 삭제, 로컬스토리지 클리어 등)
-    if (confirm('로그아웃 하시겠습니까?')) {
-        localStorage.clear();
-        window.location.href = '/login.html';
-    }
-}
-
 // 숫자 포맷팅 (천 단위 콤마)
 function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -413,136 +389,3 @@ function toggleTokenDetails() {
     }
 }
 
-// 게스트 코드 상세 정보 토글 함수
-function toggleGuestCodeDetails() {
-    const detailsEl = document.getElementById('guestCodeDetails');
-    const iconEl = document.getElementById('toggleGuestCodeIcon');
-
-    if (detailsEl.classList.contains('hidden')) {
-        detailsEl.classList.remove('hidden');
-        iconEl.textContent = '▲';
-    } else {
-        detailsEl.classList.add('hidden');
-        iconEl.textContent = '▼';
-    }
-}
-
-// 게스트 코드 발급
-async function generateGuestCode() {
-    try {
-        const btn = document.getElementById('generateGuestCodeBtn');
-        btn.disabled = true;
-        btn.textContent = '발급 중...';
-
-        // 서버에서 환경변수의 계좌번호를 사용하므로 body는 비어있음
-        const response = await fetch(`${API_BASE_URL}/guest/generate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-
-        const data = await response.json();
-
-        if (response.ok && data.success) {
-            // 코드 표시
-            document.getElementById('guestCodeValue').textContent = data.guestCode;
-            document.getElementById('guestCodeExpiry').textContent = data.expiresIn;
-
-            // 상세 영역 펼치기
-            const detailsEl = document.getElementById('guestCodeDetails');
-            const iconEl = document.getElementById('toggleGuestCodeIcon');
-            if (detailsEl.classList.contains('hidden')) {
-                detailsEl.classList.remove('hidden');
-                iconEl.textContent = '▲';
-            }
-
-            // UI 업데이트
-            document.getElementById('guestCodeInfo').classList.add('hidden');
-            document.getElementById('guestCodeDisplay').classList.remove('hidden');
-
-            // 버튼 텍스트 변경
-            btn.textContent = '새 코드 발급';
-
-            // 성공 메시지
-            showGuestCodeMessage('게스트 코드가 발급되었습니다!', 'success');
-        } else {
-            throw new Error(data.message || '코드 발급에 실패했습니다.');
-        }
-    } catch (error) {
-        console.error('게스트 코드 발급 오류:', error);
-        showGuestCodeMessage(error.message, 'error');
-    } finally {
-        const btn = document.getElementById('generateGuestCodeBtn');
-        btn.disabled = false;
-        if (btn.textContent === '발급 중...') {
-            btn.textContent = '코드 발급';
-        }
-    }
-}
-
-// 게스트 코드 복사
-async function copyGuestCode() {
-    const code = document.getElementById('guestCodeValue').textContent;
-
-    try {
-        await navigator.clipboard.writeText(code);
-
-        const btn = document.getElementById('copyGuestCodeBtn');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = `
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-            </svg>
-            복사됨!
-        `;
-
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-        }, 2000);
-
-        showGuestCodeMessage('코드가 복사되었습니다!', 'success');
-    } catch (error) {
-        console.error('복사 실패:', error);
-        showGuestCodeMessage('복사에 실패했습니다.', 'error');
-    }
-}
-
-// 게스트 코드 공유 (Web Share API)
-async function shareGuestCode() {
-    const code = document.getElementById('guestCodeValue').textContent;
-    const shareData = {
-        title: '포트폴리오 공유',
-        text: `내 포트폴리오를 확인하세요! 게스트 코드: ${code}`,
-        url: window.location.origin + '/guest-code.html'
-    };
-
-    try {
-        if (navigator.share) {
-            await navigator.share(shareData);
-            showGuestCodeMessage('공유되었습니다!', 'success');
-        } else {
-            // Web Share API를 지원하지 않는 경우 복사
-            await copyGuestCode();
-        }
-    } catch (error) {
-        if (error.name !== 'AbortError') {
-            console.error('공유 실패:', error);
-        }
-    }
-}
-
-// 게스트 코드 메시지 표시
-function showGuestCodeMessage(message, type) {
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 ${
-        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-    }`;
-    messageDiv.textContent = message;
-
-    document.body.appendChild(messageDiv);
-
-    setTimeout(() => {
-        messageDiv.remove();
-    }, 3000);
-}
