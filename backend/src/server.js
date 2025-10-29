@@ -262,8 +262,51 @@ app.get('/api/stock/chart/:stockCode', async (req, res) => {
 });
 
 // Guest Mode API
-// 게스트 코드 저장소 (실제 환경에서는 데이터베이스 사용)
-const guestCodes = new Map();
+// 게스트 코드 저장 경로
+const GUEST_CODES_FILE = path.join(__dirname, 'data', 'guest-codes.json');
+
+// 게스트 코드 저장소 (메모리)
+let guestCodes = new Map();
+
+// 게스트 코드 파일에서 로드
+function loadGuestCodes() {
+    try {
+        if (fs.existsSync(GUEST_CODES_FILE)) {
+            const data = fs.readFileSync(GUEST_CODES_FILE, 'utf8');
+            const codesArray = JSON.parse(data);
+            guestCodes = new Map(codesArray);
+            console.log(`✅ ${guestCodes.size}개 게스트 코드 로드 완료`);
+        } else {
+            console.log('ℹ️ 게스트 코드 파일이 없습니다. 새로 생성됩니다.');
+        }
+    } catch (error) {
+        console.error('❌ 게스트 코드 로드 실패:', error.message);
+    }
+}
+
+// 게스트 코드 파일에 저장
+function saveGuestCodes() {
+    try {
+        const codesArray = Array.from(guestCodes.entries());
+        fs.writeFileSync(GUEST_CODES_FILE, JSON.stringify(codesArray, null, 2), 'utf8');
+        console.log(`💾 게스트 코드 저장 완료 (${guestCodes.size}개)`);
+    } catch (error) {
+        console.error('❌ 게스트 코드 저장 실패:', error.message);
+    }
+}
+
+// 계좌번호로 기존 코드 찾기
+function findCodeByAccountNumber(accountNumber) {
+    for (const [code, data] of guestCodes.entries()) {
+        if (data.accountNumber === accountNumber) {
+            return code;
+        }
+    }
+    return null;
+}
+
+// 서버 시작 시 게스트 코드 로드
+loadGuestCodes();
 
 // 게스트 코드 생성 API (사용자가 자신의 포트폴리오를 공유할 때 사용)
 app.post('/api/guest/generate', (req, res) => {
@@ -275,6 +318,19 @@ app.post('/api/guest/generate', (req, res) => {
             return res.status(400).json({
                 error: 'Account number not configured',
                 message: '계좌번호가 설정되지 않았습니다.'
+            });
+        }
+
+        // 기존 코드가 있는지 확인
+        let existingCode = findCodeByAccountNumber(accountNumber);
+
+        if (existingCode) {
+            console.log(`✅ 기존 게스트 코드 반환: ${existingCode} for ${accountNumber}`);
+            return res.json({
+                success: true,
+                guestCode: existingCode,
+                expiresIn: '영구',
+                isExisting: true
             });
         }
 
@@ -293,19 +349,22 @@ app.post('/api/guest/generate', (req, res) => {
             guestCode = generateCode();
         } while (guestCodes.has(guestCode));
 
-        // 게스트 코드와 계좌번호 매핑 저장 (24시간 유효)
+        // 게스트 코드와 계좌번호 매핑 저장 (영구 유지)
         guestCodes.set(guestCode, {
             accountNumber,
-            createdAt: Date.now(),
-            expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24시간
+            createdAt: Date.now()
         });
 
-        console.log(`✅ 게스트 코드 생성: ${guestCode} for ${accountNumber}`);
+        // 파일에 저장
+        saveGuestCodes();
+
+        console.log(`✅ 새 게스트 코드 생성: ${guestCode} for ${accountNumber}`);
 
         res.json({
             success: true,
             guestCode,
-            expiresIn: '24시간'
+            expiresIn: '영구',
+            isExisting: false
         });
     } catch (error) {
         console.error('❌ 게스트 코드 생성 오류:', error);
@@ -332,6 +391,7 @@ app.post('/api/guest/verify', (req, res) => {
         const codeData = guestCodes.get(guestCode.toUpperCase());
 
         if (!codeData) {
+            console.log(`❌ 게스트 코드 검증 실패: ${guestCode} (코드가 존재하지 않음)`);
             return res.json({
                 success: false,
                 valid: false,
@@ -339,17 +399,7 @@ app.post('/api/guest/verify', (req, res) => {
             });
         }
 
-        // 만료 확인
-        if (Date.now() > codeData.expiresAt) {
-            guestCodes.delete(guestCode.toUpperCase());
-            return res.json({
-                success: false,
-                valid: false,
-                message: '만료된 게스트 코드입니다.'
-            });
-        }
-
-        console.log(`✅ 게스트 코드 검증 성공: ${guestCode}`);
+        console.log(`✅ 게스트 코드 검증 성공: ${guestCode} -> ${codeData.accountNumber}`);
 
         res.json({
             success: true,
@@ -366,17 +416,6 @@ app.post('/api/guest/verify', (req, res) => {
         });
     }
 });
-
-// 만료된 게스트 코드 정리 (1시간마다)
-setInterval(() => {
-    const now = Date.now();
-    for (const [code, data] of guestCodes.entries()) {
-        if (now > data.expiresAt) {
-            guestCodes.delete(code);
-            console.log(`🗑️ 만료된 게스트 코드 삭제: ${code}`);
-        }
-    }
-}, 60 * 60 * 1000); // 1시간
 
 // Serve frontend HTML files
 // Note: Root path (/) automatically serves index.html via express.static
