@@ -97,8 +97,68 @@ function showGuestCodeError(message) {
     errorDiv.classList.remove('hidden');
 }
 
+// 현재 모드 확인 및 UI 업데이트
+function checkCurrentMode() {
+    const guestMode = sessionStorage.getItem('guestMode');
+    const guestCode = sessionStorage.getItem('guestCode');
+
+    const currentModeDisplay = document.getElementById('currentModeDisplay');
+    const currentModeText = document.getElementById('currentModeText');
+    const modeChangeSection = document.getElementById('modeChangeSection');
+    const switchToUserModeBtn = document.getElementById('switchToUserModeBtn');
+    const switchToGuestModeBtn = document.getElementById('switchToGuestModeBtn');
+
+    if (guestMode === 'true' && guestCode) {
+        // 게스트 모드
+        currentModeDisplay.classList.remove('hidden');
+        currentModeText.textContent = '게스트 모드';
+        currentModeText.classList.remove('text-blue-600');
+        currentModeText.classList.add('text-purple-600');
+
+        modeChangeSection.classList.remove('hidden');
+        switchToUserModeBtn.classList.remove('hidden');
+        switchToGuestModeBtn.classList.add('hidden');
+    } else {
+        // 사용자 모드 (또는 모드 선택 안됨)
+        // 모드가 선택되어 있는지 확인 (다른 페이지에서 왔는지)
+        const referrer = document.referrer;
+        if (referrer && (referrer.includes('home.html') || referrer.includes('chart.html') ||
+                         referrer.includes('history.html') || referrer.includes('account.html'))) {
+            currentModeDisplay.classList.remove('hidden');
+            currentModeText.textContent = '사용자 모드';
+            currentModeText.classList.remove('text-purple-600');
+            currentModeText.classList.add('text-blue-600');
+
+            modeChangeSection.classList.remove('hidden');
+            switchToUserModeBtn.classList.add('hidden');
+            switchToGuestModeBtn.classList.remove('hidden');
+        }
+    }
+}
+
+// 모드 전환 함수
+function switchMode(mode) {
+    if (mode === 'user') {
+        // 사용자 모드로 전환
+        sessionStorage.removeItem('guestMode');
+        sessionStorage.removeItem('guestAccountNumber');
+        sessionStorage.removeItem('guestCode');
+        window.location.href = '/home.html';
+    } else if (mode === 'guest') {
+        // 게스트 모드로 전환 (코드 입력 모달 표시)
+        selectGuestMode();
+    }
+}
+
 // Enter 키로 코드 확인
 document.addEventListener('DOMContentLoaded', () => {
+    // 현재 모드 확인
+    checkCurrentMode();
+
+    // 모드 전환 버튼 이벤트 리스너
+    document.getElementById('switchToUserModeBtn')?.addEventListener('click', () => switchMode('user'));
+    document.getElementById('switchToGuestModeBtn')?.addEventListener('click', () => switchMode('guest'));
+
     const codeInput = document.getElementById('guestCodeInput');
     if (codeInput) {
         codeInput.addEventListener('keypress', (e) => {

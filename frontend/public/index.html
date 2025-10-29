@@ -54,6 +54,15 @@
         <div class="text-center mb-12">
             <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">주식 트레이딩 시스템</h1>
             <p class="text-lg text-gray-600">원하시는 모드를 선택해주세요</p>
+
+            <!-- 현재 모드 표시 -->
+            <div id="currentModeDisplay" class="hidden mt-6">
+                <div class="inline-flex items-center gap-2 px-6 py-3 bg-white rounded-full shadow-lg border-2">
+                    <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-sm font-semibold text-gray-700">현재 모드:</span>
+                    <span id="currentModeText" class="text-sm font-bold text-blue-600"></span>
+                </div>
+            </div>
         </div>
 
         <!-- 모드 선택 카드 -->
@@ -140,8 +149,32 @@
             </div>
         </div>
 
+        <!-- 모드 변경 섹션 -->
+        <div id="modeChangeSection" class="hidden mt-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 border-2 border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4 text-center">모드 변경</h3>
+                <p class="text-sm text-gray-600 mb-4 text-center">다른 모드로 전환하시겠습니까?</p>
+
+                <div class="flex flex-col sm:flex-row gap-3 justify-center">
+                    <button id="switchToUserModeBtn" class="hidden px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        사용자 모드로 전환
+                    </button>
+                    <button id="switchToGuestModeBtn" class="hidden px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors shadow-md hover:shadow-lg flex items-center justify-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        게스트 모드로 전환
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- 푸터 정보 -->
-        <div class="text-center text-sm text-gray-500">
+        <div class="text-center text-sm text-gray-500 mt-8">
             <p>안전한 투자 관리를 위한 주식 트레이딩 시스템</p>
         </div>
     </div>
