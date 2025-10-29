@@ -128,23 +128,54 @@
         }
 
         @media (max-width: 768px) {
-            .transaction-row {
-                grid-template-columns: 1fr;
-                gap: 20px;
+            .timeline-container {
+                padding: 0 20px;
             }
 
             .timeline-line {
-                left: 20px;
+                left: 50% !important;
+                transform: translateX(-50%);
             }
 
-            .loss-section,
+            .transaction-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 40px;
+                padding: 0;
+                position: relative;
+            }
+
+            .loss-section {
+                text-align: right;
+                padding-right: 10px;
+            }
+
             .profit-section {
                 text-align: left;
+                padding-left: 10px;
             }
 
-            .transaction-icon {
+            .transaction-card {
+                max-width: 100%;
+                font-size: 0.85rem;
+            }
+
+            .loss-icon {
+                right: -30px !important;
+                left: auto !important;
+            }
+
+            .profit-icon {
                 left: -30px !important;
                 right: auto !important;
+            }
+
+            .date-marker {
+                margin: 0;
+            }
+
+            .date-badge {
+                left: 50% !important;
+                transform: translateX(-50%) !important;
             }
         }
     </style>
