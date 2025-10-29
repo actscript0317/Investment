@@ -55,10 +55,9 @@
         .transaction-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 60px;
+            gap: 40px;
             margin-bottom: 20px;
             position: relative;
-            padding: 0 20px;
         }
 
         .transaction-card {
@@ -68,7 +67,6 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
             position: relative;
-            max-width: 450px;
         }
 
         .transaction-card:hover {
@@ -86,12 +84,10 @@
 
         .loss-section {
             text-align: right;
-            margin-left: auto;
         }
 
         .profit-section {
             text-align: left;
-            margin-right: auto;
         }
 
         .transaction-icon {
@@ -111,13 +107,13 @@
         }
 
         .loss-icon {
-            right: -50px;
+            right: -40px;
             background: #ef4444;
             color: white;
         }
 
         .profit-icon {
-            left: -50px;
+            left: -40px;
             background: #10b981;
             color: white;
         }
@@ -128,54 +124,27 @@
         }
 
         @media (max-width: 768px) {
-            .timeline-container {
-                padding: 0 20px;
+            .transaction-row {
+                grid-template-columns: 1fr;
+                gap: 20px;
             }
 
             .timeline-line {
-                left: 50% !important;
-                transform: translateX(-50%);
+                left: 20px;
             }
 
-            .transaction-row {
-                grid-template-columns: 1fr 1fr;
-                gap: 40px;
-                padding: 0;
-                position: relative;
-            }
-
-            .loss-section {
-                text-align: right;
-                padding-right: 10px;
-            }
-
+            .loss-section,
             .profit-section {
                 text-align: left;
-                padding-left: 10px;
             }
 
             .transaction-card {
                 max-width: 100%;
-                font-size: 0.85rem;
             }
 
-            .loss-icon {
-                right: -30px !important;
-                left: auto !important;
-            }
-
-            .profit-icon {
+            .transaction-icon {
                 left: -30px !important;
                 right: auto !important;
-            }
-
-            .date-marker {
-                margin: 0;
-            }
-
-            .date-badge {
-                left: 50% !important;
-                transform: translateX(-50%) !important;
             }
         }
     </style>
@@ -220,7 +189,6 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="mb-8">
             <h1 class="text-3xl font-bold text-gray-900 mb-2">거래내역</h1>
-            <p class="text-gray-600">왼쪽: 손실 거래 | 오른쪽: 익절 거래</p>
         </div>
 
         <!-- Summary and Filter Section -->
