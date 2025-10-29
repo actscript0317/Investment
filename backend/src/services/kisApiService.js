@@ -108,9 +108,45 @@ async function getAccessToken() {
         return accessToken;
     }
 
-    // 저장된 토큰이 없으면 에러 발생 (자동 발급 안함)
-    console.log('❌ 저장된 토큰이 없습니다. 자동 발급하지 않습니다.');
-    throw new Error('저장된 토큰이 없습니다. 먼저 토큰을 발급받아야 합니다.');
+    // 저장된 토큰이 없으면 자동 발급 (클라우드 환경 대응)
+    console.log('⚠️ 저장된 토큰이 없습니다. 자동으로 토큰을 발급합니다...');
+    try {
+        await issueTokenWithoutDateCheck();
+        return accessToken;
+    } catch (error) {
+        console.error('❌ 자동 토큰 발급 실패:', error.message);
+        throw new Error('토큰 발급에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    }
+}
+
+// 날짜 체크 없이 토큰 발급 (클라우드 환경용)
+async function issueTokenWithoutDateCheck() {
+    try {
+        console.log('🔄 새로운 토큰 자동 발급 중...');
+        const response = await axios.post(`${KIS_BASE_URL}/oauth2/tokenP`, {
+            grant_type: 'client_credentials',
+            appkey: KIS_APP_KEY,
+            appsecret: KIS_APP_SECRET
+        });
+
+        accessToken = response.data.access_token;
+        const now = Date.now();
+        const issuedDate = new Date(now).toISOString();
+        // 토큰 만료 시간 설정 (발급 후 23시간 59분 유효)
+        tokenExpiry = now + (23 * 60 * 60 * 1000) + (59 * 60 * 1000);
+
+        // 토큰을 파일에 저장
+        saveTokenToCache(accessToken, tokenExpiry, issuedDate);
+
+        console.log('✅ 한국투자증권 API 토큰 자동 발급 성공');
+        console.log(`   - 발급 시간: ${new Date(now).toLocaleString('ko-KR')}`);
+        console.log(`   - 만료 시간: ${new Date(tokenExpiry).toLocaleString('ko-KR')}`);
+
+        return true;
+    } catch (error) {
+        console.error('❌ 한국투자증권 API 토큰 발급 실패:', error.message);
+        throw error;
+    }
 }
 
 // 새로운 토큰 수동 발급
@@ -121,30 +157,11 @@ async function issueNewToken() {
     }
 
     try {
-        console.log('🔄 새로운 토큰 발급 중...');
-        const response = await axios.post(`${KIS_BASE_URL}/oauth2/tokenP`, {
-            grant_type: 'client_credentials',
-            appkey: KIS_APP_KEY,
-            appsecret: KIS_APP_SECRET
-        });
-
-        accessToken = response.data.access_token;
-        const now = Date.now();
-        const issuedDate = new Date(now).toISOString();
-        // 토큰 만료 시간 설정 (발급 후 23시간 59분 유효 - 하루 종일 사용)
-        tokenExpiry = now + (23 * 60 * 60 * 1000) + (59 * 60 * 1000);
-
-        // 토큰을 파일에 저장 (발급 날짜 포함)
-        saveTokenToCache(accessToken, tokenExpiry, issuedDate);
-
-        console.log('✅ 한국투자증권 API 토큰 발급 성공');
-        console.log(`   - 발급 시간: ${new Date(now).toLocaleString('ko-KR')}`);
-        console.log(`   - 만료 시간: ${new Date(tokenExpiry).toLocaleString('ko-KR')}`);
-
+        await issueTokenWithoutDateCheck();
         return {
             success: true,
             message: '토큰 발급 성공',
-            issuedAt: new Date(now).toISOString(),
+            issuedAt: new Date(Date.now()).toISOString(),
             expiresAt: new Date(tokenExpiry).toISOString()
         };
     } catch (error) {
