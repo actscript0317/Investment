@@ -44,7 +44,7 @@ async function handleSubmit(event) {
             sessionStorage.setItem('guestAccountNumber', data.accountNumber);
 
             // 홈 화면으로 이동
-            window.location.href = '/index.html';
+            window.location.href = '/home.html';
         } else {
             // 게스트 코드가 유효하지 않은 경우
             showError(data.message || '올바르지 않은 게스트 코드입니다.');

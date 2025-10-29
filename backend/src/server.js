@@ -371,9 +371,7 @@ setInterval(() => {
 }, 60 * 60 * 1000); // 1시간
 
 // Serve frontend HTML files
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../frontend/public', 'mode-select.html'));
-});
+// Note: Root path (/) automatically serves index.html via express.static
 
 app.get('/signup', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/public', 'signup.html'));

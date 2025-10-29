@@ -3,109 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>주식 트레이딩 시스템</title>
+    <title>모드 선택 - 주식 트레이딩 시스템</title>
     <link rel="stylesheet" href="/css/output.css">
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="/" class="text-xl sm:text-2xl font-bold text-blue-600">주식 트레이딩</a>
-                </div>
-                <div id="navButtons" class="hidden sm:flex items-center space-x-2 sm:space-x-4">
-                    <a href="/mode-select.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">모드 선택</a>
-                    <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
-                    <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
-                    <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">내 계좌</a>
-                    <!-- 로그인 상태에 따라 JavaScript로 변경됨 -->
-                    <a href="/login.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">로그인</a>
-                    <a href="/signup.html" class="bg-blue-600 text-white hover:bg-blue-700 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium">회원가입</a>
-                </div>
-                <!-- Mobile menu button -->
-                <div class="sm:hidden flex items-center">
-                    <button id="mobileMenuBtn" class="text-gray-700 hover:text-blue-600 p-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-4xl w-full">
+        <!-- 헤더 -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl sm:text-5xl font-bold text-gray-900 mb-4">주식 트레이딩 시스템</h1>
+            <p class="text-lg text-gray-600">원하시는 모드를 선택해주세요</p>
+        </div>
+
+        <!-- 모드 선택 카드 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- 사용자 모드 -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer border-2 border-transparent hover:border-blue-500"
+                 onclick="selectUserMode()">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                         </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">사용자 모드</h2>
+                    <p class="text-gray-600 mb-6">
+                        본인의 계좌로 로그인하여<br>
+                        실시간 거래 내역과 포트폴리오를 관리하세요
+                    </p>
+                    <div class="flex flex-col space-y-2 text-sm text-gray-500">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>실시간 거래 내역</span>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>포트폴리오 관리</span>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>1억 달성 프로젝트</span>
+                        </div>
+                    </div>
+                    <button class="mt-6 px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">
+                        시작하기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 게스트 모드 -->
+            <div class="bg-white rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer border-2 border-transparent hover:border-purple-500"
+                 onclick="selectGuestMode()">
+                <div class="flex flex-col items-center text-center">
+                    <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+                        <svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-3">게스트 모드</h2>
+                    <p class="text-gray-600 mb-6">
+                        게스트 코드를 입력하여<br>
+                        다른 사용자의 포트폴리오를 조회하세요
+                    </p>
+                    <div class="flex flex-col space-y-2 text-sm text-gray-500">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>거래 내역 조회</span>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>보유 종목 확인</span>
+                        </div>
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            <span>계좌 정보 보기</span>
+                        </div>
+                    </div>
+                    <button class="mt-6 px-8 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors">
+                        코드 입력
                     </button>
                 </div>
             </div>
         </div>
-        <!-- Mobile menu -->
-        <div id="mobileMenu" class="hidden sm:hidden bg-white border-t border-gray-200">
-            <div class="px-4 py-3 space-y-2">
-                <a href="/mode-select.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">모드 선택</a>
-                <a href="/chart.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">차트</a>
-                <a href="/history.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">거래내역</a>
-                <a href="/account.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">내 계좌</a>
-                <a href="/login.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">로그인</a>
-                <a href="/signup.html" class="block bg-blue-600 text-white hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-medium text-center">회원가입</a>
-            </div>
-        </div>
-    </nav>
 
-    <!-- 1억 달성 프로젝트 Section -->
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
-        <div class="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-12">
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 text-center mb-6 sm:mb-8">
-                💰 1억 달성 프로젝트
-            </h1>
-
-            <!-- 현재 상태 카드들 -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
-                <div class="text-center p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl border border-blue-100">
-                    <p class="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">현재 자산</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-blue-600" id="currentAsset">-</p>
-                </div>
-                <div class="text-center p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl border border-green-100">
-                    <p class="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">달성률</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-green-600" id="achievementRate">-%</p>
-                </div>
-                <div class="text-center p-4 sm:p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl sm:rounded-2xl border border-purple-100">
-                    <p class="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">목표까지</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-purple-600" id="remainingAmount">-</p>
-                </div>
-            </div>
-
-            <!-- 게이지 바 -->
-            <div class="mb-6">
-                <div class="flex justify-between items-center mb-2 sm:mb-3">
-                    <span class="text-sm sm:text-lg font-semibold text-gray-700">진행 상황</span>
-                    <span class="text-sm sm:text-lg font-bold text-indigo-600" id="progressPercentage">0%</span>
-                </div>
-                <div class="relative w-full h-12 sm:h-16 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-                    <div id="progressBar"
-                         class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-1000 ease-out flex items-center justify-end pr-2 sm:pr-4"
-                         style="width: 0%">
-                        <span class="text-white font-bold text-xs sm:text-sm drop-shadow-lg" id="progressBarText"></span>
-                    </div>
-                </div>
-                <div class="flex justify-between mt-2 text-xs sm:text-sm text-gray-500">
-                    <span>0원</span>
-                    <span class="font-semibold text-indigo-600">목표: 1억원</span>
-                </div>
-            </div>
-
-            <!-- 응원 메시지 -->
-            <div class="text-center mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
-                <p class="text-sm sm:text-base lg:text-lg text-gray-700" id="encouragementMessage">
-                    계좌 정보를 불러오는 중...
-                </p>
-            </div>
+        <!-- 푸터 정보 -->
+        <div class="text-center text-sm text-gray-500">
+            <p>안전한 투자 관리를 위한 주식 트레이딩 시스템</p>
         </div>
     </div>
 
-    <!-- Footer -->
-    <footer class="bg-white mt-20">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-gray-500 text-sm">
-                &copy; 2025 주식 트레이딩 시스템. All rights reserved.
-            </p>
-        </div>
-    </footer>
-
-    <script type="module" src="/js/index.js"></script>
+    <script src="/js/mode-select.js"></script>
 </body>
 </html>
