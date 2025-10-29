@@ -52,6 +52,8 @@ async function verifyGuestCode() {
         verifyBtn.textContent = '확인 중...';
         errorDiv.classList.add('hidden');
 
+        console.log('게스트 코드 검증 시도:', code);
+
         // 서버에 코드 검증 요청
         const response = await fetch(`${API_BASE_URL}/guest/verify`, {
             method: 'POST',
@@ -61,13 +63,18 @@ async function verifyGuestCode() {
             body: JSON.stringify({ guestCode: code })
         });
 
-        const data = await response.json();
+        console.log('서버 응답 상태:', response.status, response.ok);
 
-        if (response.ok && data.success) {
+        const data = await response.json();
+        console.log('서버 응답 데이터:', data);
+
+        if (data.success) {
             // 게스트 모드 정보 저장
             sessionStorage.setItem('guestMode', 'true');
             sessionStorage.setItem('guestAccountNumber', data.accountNumber);
             sessionStorage.setItem('guestCode', code);
+
+            console.log('게스트 모드 진입 성공, 홈으로 이동');
 
             // 홈 페이지로 이동
             window.location.href = '/home.html';
