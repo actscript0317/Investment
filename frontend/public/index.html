@@ -145,6 +145,47 @@
             <p>안전한 투자 관리를 위한 주식 트레이딩 시스템</p>
         </div>
     </div>
+
+    <!-- 게스트 코드 입력 모달 -->
+    <div id="guestCodeModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 sm:p-8 transform transition-all">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl sm:text-2xl font-bold text-gray-900">게스트 코드 입력</h2>
+                <button onclick="closeGuestCodeModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <p class="text-gray-600 mb-6">다른 사용자가 공유한 게스트 코드를 입력하세요</p>
+
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">게스트 코드</label>
+                <input type="text" id="guestCodeInput"
+                       placeholder="예: ABC-123-XYZ"
+                       class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-purple-500 focus:outline-none text-center text-lg font-mono tracking-wider uppercase"
+                       maxlength="11">
+                <p class="mt-2 text-xs text-gray-500">코드는 대시(-)로 구분된 형식입니다</p>
+            </div>
+
+            <div id="guestCodeError" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p class="text-sm text-red-600"></p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="closeGuestCodeModal()"
+                        class="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+                    취소
+                </button>
+                <button onclick="verifyGuestCode()"
+                        id="verifyGuestCodeBtn"
+                        class="flex-1 px-6 py-3 bg-purple-600 text-white font-semibold rounded-lg hover:bg-purple-700 transition-colors">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
     </div>
 
     <script src="/js/mode-select.js"></script>

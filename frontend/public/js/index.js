@@ -65,7 +65,18 @@ async function checkAuthStatus() {
 // 계좌 잔고 조회 및 게이지바 업데이트
 async function loadAccountBalance() {
     try {
-        const response = await fetch(`${API_BASE_URL}/account/balance`);
+        // 게스트 모드 확인
+        const guestMode = sessionStorage.getItem('guestMode');
+        const guestAccountNumber = sessionStorage.getItem('guestAccountNumber');
+
+        let url = `${API_BASE_URL}/account/balance`;
+
+        // 게스트 모드인 경우 게스트 계좌번호 사용
+        if (guestMode === 'true' && guestAccountNumber) {
+            url += `?accountNumber=${guestAccountNumber}`;
+        }
+
+        const response = await fetch(url);
         const data = await response.json();
 
         if (!response.ok) {

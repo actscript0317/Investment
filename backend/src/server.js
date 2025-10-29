@@ -124,7 +124,8 @@ app.get('/api/stock/search', async (req, res) => {
 // 계좌 잔고 조회 API
 app.get('/api/account/balance', async (req, res) => {
     try {
-        const accountNumber = process.env.KIS_ACCOUNT_NUMBER;
+        // 게스트 모드인 경우 query parameter로 전달된 계좌번호 사용
+        const accountNumber = req.query.accountNumber || process.env.KIS_ACCOUNT_NUMBER;
 
         if (!accountNumber) {
             console.error('❌ KIS_ACCOUNT_NUMBER가 설정되지 않았습니다.');
@@ -152,7 +153,8 @@ app.get('/api/account/balance', async (req, res) => {
 // 거래내역 조회 API
 app.get('/api/account/transactions', async (req, res) => {
     try {
-        const accountNumber = process.env.KIS_ACCOUNT_NUMBER;
+        // 게스트 모드인 경우 query parameter로 전달된 계좌번호 사용
+        const accountNumber = req.query.accountNumber || process.env.KIS_ACCOUNT_NUMBER;
         const { startDate, endDate } = req.query;
 
         if (!accountNumber) {
@@ -266,12 +268,13 @@ const guestCodes = new Map();
 // 게스트 코드 생성 API (사용자가 자신의 포트폴리오를 공유할 때 사용)
 app.post('/api/guest/generate', (req, res) => {
     try {
-        const { accountNumber } = req.body;
+        // 서버의 환경변수에서 계좌번호 사용 (보안을 위해 클라이언트에서 받지 않음)
+        const accountNumber = process.env.KIS_ACCOUNT_NUMBER;
 
         if (!accountNumber) {
             return res.status(400).json({
-                error: 'Account number is required',
-                message: '계좌번호가 필요합니다.'
+                error: 'Account number not configured',
+                message: '계좌번호가 설정되지 않았습니다.'
             });
         }
 
@@ -320,6 +323,7 @@ app.post('/api/guest/verify', (req, res) => {
 
         if (!guestCode) {
             return res.status(400).json({
+                success: false,
                 valid: false,
                 message: '게스트 코드를 입력해주세요.'
             });
@@ -329,6 +333,7 @@ app.post('/api/guest/verify', (req, res) => {
 
         if (!codeData) {
             return res.json({
+                success: false,
                 valid: false,
                 message: '올바르지 않은 게스트 코드입니다.'
             });
@@ -338,6 +343,7 @@ app.post('/api/guest/verify', (req, res) => {
         if (Date.now() > codeData.expiresAt) {
             guestCodes.delete(guestCode.toUpperCase());
             return res.json({
+                success: false,
                 valid: false,
                 message: '만료된 게스트 코드입니다.'
             });
@@ -346,6 +352,7 @@ app.post('/api/guest/verify', (req, res) => {
         console.log(`✅ 게스트 코드 검증 성공: ${guestCode}`);
 
         res.json({
+            success: true,
             valid: true,
             accountNumber: codeData.accountNumber,
             message: '유효한 게스트 코드입니다.'
@@ -353,6 +360,7 @@ app.post('/api/guest/verify', (req, res) => {
     } catch (error) {
         console.error('❌ 게스트 코드 검증 오류:', error);
         res.status(500).json({
+            success: false,
             valid: false,
             message: '서버 오류가 발생했습니다.'
         });

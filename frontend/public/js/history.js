@@ -101,7 +101,18 @@ async function loadTransactions() {
         const startDate = document.getElementById('startDate').value.replace(/-/g, '');
         const endDate = document.getElementById('endDate').value.replace(/-/g, '');
 
-        const response = await fetch(`/api/account/transactions?startDate=${startDate}&endDate=${endDate}`);
+        // 게스트 모드 확인
+        const guestMode = sessionStorage.getItem('guestMode');
+        const guestAccountNumber = sessionStorage.getItem('guestAccountNumber');
+
+        let url = `/api/account/transactions?startDate=${startDate}&endDate=${endDate}`;
+
+        // 게스트 모드인 경우 게스트 계좌번호 추가
+        if (guestMode === 'true' && guestAccountNumber) {
+            url += `&accountNumber=${guestAccountNumber}`;
+        }
+
+        const response = await fetch(url);
 
         if (!response.ok) {
             throw new Error('Failed to fetch transactions');
