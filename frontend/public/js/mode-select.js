@@ -1,5 +1,8 @@
 // Mode Selection Page JavaScript
-const API_BASE_URL = 'http://localhost:3000/api';
+// API Base URL - 상대 경로 사용 (모바일/배포 환경 대응)
+const API_BASE_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000/api'
+    : '/api';
 
 // 페이지 로드 확인
 console.log('Mode selection page loaded');

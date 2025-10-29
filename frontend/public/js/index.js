@@ -1,6 +1,9 @@
 import { supabase } from './supabase-client.js';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+// API Base URL - 상대 경로 사용 (모바일/배포 환경 대응)
+const API_BASE_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:3000/api'
+    : '/api';
 const GOAL_AMOUNT = 100000000; // 1억원
 
 // 페이지 로드 시 로그인 상태 확인 및 계좌 정보 로드
