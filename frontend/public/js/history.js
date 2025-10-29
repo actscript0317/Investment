@@ -279,7 +279,10 @@ function createTransactionCard(transaction, type) {
                 <div>
                     <div class="flex items-center justify-between">
                         <div class="font-bold text-gray-900">${transaction.stockName}</div>
-                        <span class="text-xs text-blue-600 font-semibold">보유중</span>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-blue-600 font-semibold">보유중</span>
+                            <span class="expand-arrow text-gray-400 transition-transform" id="arrow-${cardId}">▼</span>
+                        </div>
                     </div>
                     <div class="text-xs text-gray-600 mt-1">매수금액: ${transaction.buyAmount.toLocaleString()}원</div>
 
@@ -316,7 +319,10 @@ function createTransactionCard(transaction, type) {
             <div>
                 <div class="flex items-center justify-between">
                     <div class="font-bold text-gray-900">${transaction.stockName}</div>
-                    <span class="text-sm ${colorClass} font-semibold">${transaction.profitLossRate >= 0 ? '+' : ''}${transaction.profitLossRate.toFixed(2)}%</span>
+                    <div class="flex items-center gap-2">
+                        <span class="text-sm ${colorClass} font-semibold">${transaction.profitLossRate >= 0 ? '+' : ''}${transaction.profitLossRate.toFixed(2)}%</span>
+                        <span class="expand-arrow text-gray-400 transition-transform" id="arrow-${cardId}">▼</span>
+                    </div>
                 </div>
                 <div class="text-xs text-gray-600 mt-1">
                     ${transaction.buyAmount.toLocaleString()}원 → ${transaction.profitLoss >= 0 ? '+' : ''}${transaction.profitLoss.toLocaleString()}원
@@ -369,8 +375,20 @@ function createTransactionCard(transaction, type) {
 // Toggle card details
 window.toggleCardDetails = function(cardId) {
     const detailsEl = document.getElementById(cardId);
+    const arrowEl = document.getElementById(`arrow-${cardId}`);
+
     if (detailsEl) {
+        const isHidden = detailsEl.classList.contains('hidden');
         detailsEl.classList.toggle('hidden');
+
+        // Rotate arrow
+        if (arrowEl) {
+            if (isHidden) {
+                arrowEl.style.transform = 'rotate(180deg)';
+            } else {
+                arrowEl.style.transform = 'rotate(0deg)';
+            }
+        }
     }
 }
 
