@@ -32,10 +32,12 @@ async function checkAuthStatus() {
         if (session) {
             // 로그인 상태: 네비게이션을 계좌, 로그아웃으로 변경
             navButtons.innerHTML = `
-                <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">차트</a>
-                <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">거래내역</a>
-                <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">내 계좌</a>
-                <button id="logoutBtn" class="text-gray-700 hover:text-red-600 px-3 py-2 rounded-md text-sm font-medium">로그아웃</button>
+                <a href="/" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">모드 선택</a>
+                <a href="/home.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">홈</a>
+                <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
+                <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
+                <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">내 계좌</a>
+                <button id="logoutBtn" class="text-gray-700 hover:text-red-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">로그아웃</button>
             `;
 
             // 로그아웃 버튼 이벤트 리스너
@@ -46,11 +48,13 @@ async function checkAuthStatus() {
         } else {
             // 비로그인 상태: 기본 네비게이션 유지
             navButtons.innerHTML = `
-                <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">차트</a>
-                <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">거래내역</a>
-                <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">내 계좌</a>
-                <a href="/login.html" class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">로그인</a>
-                <a href="/signup.html" class="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium">회원가입</a>
+                <a href="/" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">모드 선택</a>
+                <a href="/home.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">홈</a>
+                <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
+                <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
+                <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">내 계좌</a>
+                <a href="/login.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">로그인</a>
+                <a href="/signup.html" class="bg-blue-600 text-white hover:bg-blue-700 px-3 sm:px-4 py-2 rounded-md text-xs sm:text-sm font-medium">회원가입</a>
             `;
         }
     } catch (error) {
