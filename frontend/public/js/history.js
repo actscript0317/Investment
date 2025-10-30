@@ -169,6 +169,16 @@ function processTransactions(rawTransactions) {
             tax: parseFloat(tx.tl_tax || 0)
         };
 
+        // 손실 거래 디버깅
+        if (profitLoss < 0) {
+            console.log('🔵 손실 거래 발견:', {
+                종목명: processed.stockName,
+                손익: profitLoss,
+                매수금액: buyAmount,
+                매도금액: sellAmount
+            });
+        }
+
         console.log('Processed transaction:', processed);
         return processed;
     }).filter(tx => {
@@ -187,6 +197,32 @@ function displayTransactions(transactions) {
         return;
     }
 
+    // 종목별 최근 매도 날짜 추적
+    const lastSellDateByStock = {};
+    transactions.forEach(tx => {
+        if (tx.sellAmount > 0) {
+            if (!lastSellDateByStock[tx.stockCode] || tx.date > lastSellDateByStock[tx.stockCode]) {
+                lastSellDateByStock[tx.stockCode] = tx.date;
+            }
+        }
+    });
+
+    // 종목별 매수 날짜 매핑 (매도 카드에 표시용)
+    const buyDateByStock = {};
+    transactions.forEach(tx => {
+        // 매수만 한 거래
+        if (tx.buyAmount > 0 && tx.sellAmount === 0) {
+            if (!buyDateByStock[tx.stockCode] || tx.date > buyDateByStock[tx.stockCode]) {
+                buyDateByStock[tx.stockCode] = tx.date;
+            }
+        }
+        // 당일 매수+매도 거래 (buyAmount와 sellAmount가 모두 있는 경우)
+        // 이 경우 매도 거래 자체에 매수 정보가 포함되어 있으므로 별도 매수 날짜 불필요
+    });
+
+    console.log('🔴 종목별 최근 매도 날짜:', lastSellDateByStock);
+    console.log('🟢 종목별 매수 날짜:', buyDateByStock);
+
     // Group by date
     const groupedByDate = groupTransactionsByDate(transactions);
 
@@ -195,6 +231,35 @@ function displayTransactions(transactions) {
 
     sortedDates.forEach(date => {
         const dateTransactions = groupedByDate[date];
+
+        // 이 날짜의 거래를 필터링
+        const displayTransactions = dateTransactions.filter(tx => {
+            // 매도 거래는 항상 표시
+            if (tx.sellAmount > 0) {
+                return true;
+            }
+            // 매수 거래 처리
+            if (tx.buyAmount > 0 && tx.sellAmount === 0) {
+                const lastSellDate = lastSellDateByStock[tx.stockCode];
+
+                // 이 종목을 한 번도 매도한 적 없으면 표시
+                if (!lastSellDate) {
+                    console.log(`✅ 매수 카드 표시: ${tx.stockName} (매도 이력 없음)`);
+                    return true;
+                }
+
+                // 매도 이후의 매수면 표시 (새로운 포지션)
+                if (tx.date > lastSellDate) {
+                    console.log(`✅ 매수 카드 표시: ${tx.stockName} (매도 이후 새로운 매수)`);
+                    return true;
+                }
+
+                // 매도 이전의 매수는 숨김
+                console.log(`🚫 매수 카드 숨김: ${tx.stockName} (${lastSellDate}에 이미 매도됨)`);
+                return false;
+            }
+            return false;
+        });
 
         // Add date marker
         const dateMarker = document.createElement('div');
@@ -205,52 +270,87 @@ function displayTransactions(transactions) {
         `;
         transactionsList.appendChild(dateMarker);
 
-        // Separate transactions by type
-        const buyOnlyTxs = dateTransactions.filter(tx => tx.buyAmount > 0 && tx.sellAmount === 0); // 매수만 한 거래
-        const profitTxs = dateTransactions.filter(tx => tx.buyAmount > 0 && tx.sellAmount > 0 && tx.isProfit); // 익절
-        const lossTxs = dateTransactions.filter(tx => tx.buyAmount > 0 && tx.sellAmount > 0 && !tx.isProfit); // 손절
+        // Check if mobile view
+        const isMobile = window.innerWidth <= 768;
 
-        // Combine buy-only with profit transactions (right side)
-        const rightSideTxs = [...buyOnlyTxs, ...profitTxs];
+        if (isMobile) {
+            // Mobile: Display all transactions in order
+            displayTransactions.forEach(tx => {
+                const row = document.createElement('div');
+                row.className = 'transaction-row';
 
-        console.log(`Date ${date}:`, {
-            total: dateTransactions.length,
-            buyOnly: buyOnlyTxs.length,
-            profit: profitTxs.length,
-            loss: lossTxs.length
-        });
+                let type = 'buy';
+                if (tx.sellAmount > 0) {
+                    type = tx.isProfit ? 'profit' : 'loss';
+                }
 
-        // Display profit/loss transactions in pairs
-        const maxLength = Math.max(rightSideTxs.length, lossTxs.length);
+                // 매도 거래면 매수 날짜 추가
+                let buyDate = null;
+                if (tx.sellAmount > 0) {
+                    // 당일 매수+매도면 같은 날짜 사용
+                    if (tx.buyAmount > 0) {
+                        buyDate = tx.date;
+                    } else {
+                        // 다른 날 매수한 경우
+                        buyDate = buyDateByStock[tx.stockCode];
+                    }
+                }
+                const cardHtml = createTransactionCard(tx, type, false, buyDate);
 
-        for (let i = 0; i < maxLength; i++) {
-            const row = document.createElement('div');
-            row.className = 'transaction-row';
+                row.innerHTML = `
+                    <div class="profit-section">
+                        ${cardHtml}
+                    </div>
+                `;
 
-            // Loss transaction (left side)
-            const lossHtml = lossTxs[i]
-                ? createTransactionCard(lossTxs[i], 'loss')
-                : '<div class="transaction-card empty-slot"></div>';
+                transactionsList.appendChild(row);
+            });
+        } else {
+            // Desktop: Display all transactions in order
+            console.log(`📊 Date ${date}: ${displayTransactions.length} transactions`);
 
-            // Right side (buy-only or profit)
-            let rightHtml;
-            if (rightSideTxs[i]) {
-                const type = rightSideTxs[i].sellAmount === 0 ? 'buy' : 'profit';
-                rightHtml = createTransactionCard(rightSideTxs[i], type);
-            } else {
-                rightHtml = '<div class="transaction-card empty-slot"></div>';
-            }
+            displayTransactions.forEach(tx => {
+                const row = document.createElement('div');
+                row.className = 'transaction-row';
 
-            row.innerHTML = `
-                <div class="loss-section">
-                    ${lossHtml}
-                </div>
-                <div class="profit-section">
-                    ${rightHtml}
-                </div>
-            `;
+                let leftHtml = '<div class="transaction-card empty-slot"></div>';
+                let rightHtml = '<div class="transaction-card empty-slot"></div>';
 
-            transactionsList.appendChild(row);
+                // 매도 거래면 매수 날짜 추가
+                let buyDate = null;
+                if (tx.sellAmount > 0) {
+                    // 당일 매수+매도면 같은 날짜 사용
+                    if (tx.buyAmount > 0) {
+                        buyDate = tx.date;
+                    } else {
+                        // 다른 날 매수한 경우
+                        buyDate = buyDateByStock[tx.stockCode];
+                    }
+                }
+
+                // 손절은 왼쪽, 나머지는 오른쪽
+                if (tx.sellAmount > 0 && !tx.isProfit) {
+                    // 손절 - 왼쪽
+                    leftHtml = createTransactionCard(tx, 'loss', false, buyDate);
+                } else if (tx.sellAmount === 0 && tx.buyAmount > 0) {
+                    // 매수(보유중) - 오른쪽
+                    rightHtml = createTransactionCard(tx, 'buy', false, null);
+                } else if (tx.sellAmount > 0 && tx.isProfit) {
+                    // 익절 - 오른쪽
+                    rightHtml = createTransactionCard(tx, 'profit', false, buyDate);
+                }
+
+                row.innerHTML = `
+                    <div class="loss-section">
+                        ${leftHtml}
+                    </div>
+                    <div class="profit-section">
+                        ${rightHtml}
+                    </div>
+                `;
+
+                transactionsList.appendChild(row);
+            });
         }
     });
 }
@@ -268,19 +368,24 @@ function groupTransactionsByDate(transactions) {
 }
 
 // Create Transaction Card
-function createTransactionCard(transaction, type) {
+function createTransactionCard(transaction, type, isSold = false, buyDate = null) {
     const cardId = `card-${transaction.date}-${transaction.stockCode}-${Math.random().toString(36).substr(2, 9)}`;
 
     // 매수만 한 경우 (매도금액이 0)
     if (type === 'buy') {
+        // 같은 날짜에 매도된 종목이면 보유중 배지 제거
+        const holdingBadge = isSold
+            ? ''
+            : '<span class="text-xs text-green-600 font-semibold">보유중</span>';
+
         return `
-            <div class="transaction-card profit-card cursor-pointer" style="border-left: 4px solid #3b82f6; padding: 12px;" onclick="toggleCardDetails('${cardId}')">
-                <div class="profit-icon transaction-icon" style="background: #3b82f6;">💰</div>
+            <div class="transaction-card buy-card cursor-pointer" style="border-left: 4px solid #10b981; padding: 12px;" onclick="toggleCardDetails('${cardId}')">
+                <div class="buy-icon transaction-icon" style="background: #10b981;">💰</div>
                 <div>
                     <div class="flex items-center justify-between">
                         <div class="font-bold text-gray-900">${transaction.stockName}</div>
                         <div class="flex items-center gap-2">
-                            <span class="text-xs text-blue-600 font-semibold">보유중</span>
+                            ${holdingBadge}
                             <span class="expand-arrow text-gray-400 transition-transform" id="arrow-${cardId}">▼</span>
                         </div>
                     </div>
@@ -309,9 +414,20 @@ function createTransactionCard(transaction, type) {
     // 매도 완료된 경우
     const isLoss = type === 'loss';
     const icon = isLoss ? '▼' : '▲';
-    const colorClass = isLoss ? 'text-red-600' : 'text-green-600';
+    const colorClass = isLoss ? 'text-blue-600' : 'text-red-600';
     const cardClass = isLoss ? 'loss-card' : 'profit-card';
     const iconClass = isLoss ? 'loss-icon' : 'profit-icon';
+
+    // 날짜 포맷팅 (YYYYMMDD -> YY.MM.DD)
+    const formatShortDate = (dateStr) => {
+        if (!dateStr || dateStr.length !== 8) return dateStr;
+        return `${dateStr.substring(2, 4)}.${dateStr.substring(4, 6)}.${dateStr.substring(6, 8)}`;
+    };
+
+    // 매수 날짜와 매도 날짜 표시
+    const dateRange = buyDate
+        ? `${formatShortDate(buyDate)} → ${formatShortDate(transaction.date)}`
+        : formatShortDate(transaction.date);
 
     return `
         <div class="transaction-card ${cardClass} cursor-pointer" style="padding: 12px;" onclick="toggleCardDetails('${cardId}')">
@@ -324,6 +440,7 @@ function createTransactionCard(transaction, type) {
                         <span class="expand-arrow text-gray-400 transition-transform" id="arrow-${cardId}">▼</span>
                     </div>
                 </div>
+                <div class="text-xs text-gray-500 mt-0.5">${dateRange}</div>
                 <div class="text-xs text-gray-600 mt-1">
                     ${transaction.buyAmount.toLocaleString()}원 → ${transaction.profitLoss >= 0 ? '+' : ''}${transaction.profitLoss.toLocaleString()}원
                 </div>

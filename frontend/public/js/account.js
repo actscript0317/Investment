@@ -117,7 +117,13 @@ function updateHoldingsTable(data) {
     const holdingsGrid = document.getElementById('holdingsGrid');
     const holdings = data.output1 || [];
 
-    if (holdings.length === 0) {
+    // 보유수량이 0보다 큰 종목만 필터링
+    const activeHoldings = holdings.filter(stock => {
+        const quantity = parseInt(stock.hldg_qty || 0);
+        return quantity > 0;
+    });
+
+    if (activeHoldings.length === 0) {
         holdingsGrid.innerHTML = `
             <div class="text-center py-8 text-gray-500">
                 보유 종목이 없습니다.
@@ -126,7 +132,7 @@ function updateHoldingsTable(data) {
         return;
     }
 
-    holdingsGrid.innerHTML = holdings.map(stock => {
+    holdingsGrid.innerHTML = activeHoldings.map(stock => {
         const stockName = stock.prdt_name || '알 수 없음';
         const quantity = parseInt(stock.hldg_qty || 0);
         const avgPrice = parseInt(stock.pchs_avg_pric || 0);
