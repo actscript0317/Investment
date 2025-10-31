@@ -38,7 +38,13 @@
       "Bash(git push:*)",
       "Bash(move:*)",
       "Bash(timeout 3 bash:*)",
-      "Bash(if exist \"src\\.token-cache.json\" del \"src\\.token-cache.json\")"
+      "Bash(if exist \"src\\.token-cache.json\" del \"src\\.token-cache.json\")",
+      "Bash(git log:*)",
+      "Bash(timeout 5 bash -c 'while ! curl -s http://localhost:3000/api/health > /dev/null 2>&1; do sleep 0.5; done && echo \"\"Server is ready\"\"')",
+      "Bash(python:*)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== 요청 $i ===\")",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []

@@ -78,19 +78,19 @@ function updateAccountSummary(data) {
 
         console.log('Full Summary Object:', summary); // 전체 필드 확인
 
-        // 총 평가금액
-        const totalAssets = parseInt(summary.tot_evlu_amt || 0);
+        // 순자산 (융자금 제외한 실제 자본) - radix 10 명시
+        const totalAssets = parseInt(summary.nass_amt || '0', 10);
         document.getElementById('totalAssets').textContent = formatCurrency(totalAssets);
 
-        // 평가손익
-        const totalProfit = parseInt(summary.evlu_pfls_smtl_amt || 0);
+        // 평가손익 - radix 10 명시
+        const totalProfit = parseInt(summary.evlu_pfls_smtl_amt || '0', 10);
         const profitElement = document.getElementById('totalProfit');
         profitElement.textContent = formatCurrency(totalProfit);
         profitElement.className = `text-lg font-bold ${totalProfit >= 0 ? 'text-red-600' : 'text-blue-600'}`;
 
-        // 수익률 계산 (평가손익 / 투자원금 * 100)
-        // 투자원금 = 총평가금액 - 평가손익
-        const totalInvestment = totalAssets - totalProfit;
+        // 수익률 계산 (평가손익 / 매입금액 합계 * 100)
+        // pchs_amt_smtl_amt = 매입금액 합계 (실제 투자원금) - radix 10 명시
+        const totalInvestment = parseInt(summary.pchs_amt_smtl_amt || '0', 10);
         let profitRate = 0;
 
         if (totalInvestment > 0) {
@@ -99,7 +99,11 @@ function updateAccountSummary(data) {
 
         const profitRateElement = document.getElementById('totalProfitRate');
 
-        console.log('Calculated Profit Rate:', profitRate, 'Total Investment:', totalInvestment, 'Total Profit:', totalProfit); // 디버깅용
+        console.log('📊 계좌 요약 데이터:');
+        console.log('  - 순자산(nass_amt):', formatCurrency(totalAssets));
+        console.log('  - 매입금액(pchs_amt_smtl_amt):', formatCurrency(totalInvestment));
+        console.log('  - 평가손익(evlu_pfls_smtl_amt):', formatCurrency(totalProfit));
+        console.log('  - 수익률:', profitRate.toFixed(2) + '%');
 
         const profitSign = profitRate >= 0 ? '+' : '';
         profitRateElement.textContent = profitSign + profitRate.toFixed(2) + '%';
@@ -119,7 +123,7 @@ function updateHoldingsTable(data) {
 
     // 보유수량이 0보다 큰 종목만 필터링
     const activeHoldings = holdings.filter(stock => {
-        const quantity = parseInt(stock.hldg_qty || 0);
+        const quantity = parseInt(stock.hldg_qty || '0', 10);
         return quantity > 0;
     });
 
@@ -134,12 +138,12 @@ function updateHoldingsTable(data) {
 
     holdingsGrid.innerHTML = activeHoldings.map(stock => {
         const stockName = stock.prdt_name || '알 수 없음';
-        const quantity = parseInt(stock.hldg_qty || 0);
-        const avgPrice = parseInt(stock.pchs_avg_pric || 0);
-        const currentPrice = parseInt(stock.prpr || 0);
-        const evalAmount = parseInt(stock.evlu_amt || 0);
-        const profit = parseInt(stock.evlu_pfls_amt || 0);
-        const profitRate = parseFloat(stock.evlu_pfls_rt || 0);
+        const quantity = parseInt(stock.hldg_qty || '0', 10);
+        const avgPrice = parseInt(stock.pchs_avg_pric || '0', 10);
+        const currentPrice = parseInt(stock.prpr || '0', 10);
+        const evalAmount = parseInt(stock.evlu_amt || '0', 10);
+        const profit = parseInt(stock.evlu_pfls_amt || '0', 10);
+        const profitRate = parseFloat(stock.evlu_pfls_rt || '0');
 
         const isProfit = profit >= 0;
         const profitColor = isProfit ? 'text-green-700' : 'text-blue-700';

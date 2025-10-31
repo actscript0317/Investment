@@ -46,8 +46,10 @@ async function loadAccountBalance() {
 
         if (output2.length > 0) {
             const summary = output2[0];
-            const currentAsset = parseInt(summary.tot_evlu_amt || 0);
+            // nass_amt (순자산) 사용 - 융자금을 제외한 실제 자본
+            const currentAsset = parseInt(summary.nass_amt || '0', 10);
 
+            console.log('📊 홈 화면 자산 데이터:', formatCurrency(currentAsset));
             updateGaugeBar(currentAsset);
         } else {
             showError('계좌 정보를 불러올 수 없습니다.');
