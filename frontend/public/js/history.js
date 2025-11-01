@@ -90,6 +90,23 @@ async function loadTransactions() {
     transactionsList.innerHTML = '';
 
     try {
+        // 1. 먼저 계좌 잔고를 조회하여 현재 보유 종목 목록 가져오기
+        const balanceResponse = await fetch('/api/account/balance');
+        if (!balanceResponse.ok) {
+            throw new Error('Failed to fetch balance');
+        }
+        const balanceData = await balanceResponse.json();
+        const currentHoldings = balanceData.output1 || [];
+
+        // 현재 보유 중인 종목 코드 목록
+        const currentStockCodes = new Set(
+            currentHoldings
+                .filter(stock => parseInt(stock.hldg_qty || 0) > 0)
+                .map(stock => stock.pdno)
+        );
+        console.log('💎 현재 보유 종목 코드 (계좌 잔고):', Array.from(currentStockCodes));
+
+        // 2. 거래내역 조회
         const startDate = document.getElementById('startDate').value.replace(/-/g, '');
         const endDate = document.getElementById('endDate').value.replace(/-/g, '');
 
@@ -110,9 +127,9 @@ async function loadTransactions() {
 
         // Process transactions
         if (data.output1 && data.output1.length > 0) {
-            allTransactions = processTransactions(data.output1);
+            allTransactions = processTransactions(data.output1, currentStockCodes);
             console.log('Processed Transactions:', allTransactions);
-            displayTransactions(allTransactions);
+            displayTransactions(allTransactions, currentStockCodes);
             updateSummary(allTransactions);
         } else {
             emptyState.classList.remove('hidden');
@@ -132,10 +149,12 @@ async function loadTransactions() {
 }
 
 // Process Transactions
-function processTransactions(rawTransactions) {
+function processTransactions(rawTransactions, currentStockCodes) {
     console.log('Raw transaction sample:', rawTransactions[0]); // 첫 번째 거래 샘플 확인
 
-    return rawTransactions.map(tx => {
+    const processedTransactions = [];
+
+    rawTransactions.forEach(tx => {
         // 실제 API 응답 필드명
         const buyAmount = parseFloat(tx.buy_amt || 0); // 매수금액 (진입금액)
         const sellAmount = parseFloat(tx.sll_amt || 0); // 매도금액
@@ -152,43 +171,81 @@ function processTransactions(rawTransactions) {
         // 수량 필드
         const buyQty = parseInt(tx.buy_qty || 0); // 매수수량
         const sellQty = parseInt(tx.sll_qty || 0); // 매도수량
+        const hldgQty = parseInt(tx.hldg_qty || 0); // 보유수량 (현재 보유 여부 확인용)
 
-        const processed = {
-            date: date,
-            stockCode: tx.pdno,
-            stockName: tx.prdt_name || '종목명 없음',
-            buyAmount: buyAmount,
-            sellAmount: sellAmount,
-            profitLoss: profitLoss,
-            profitLossRate: profitLossRate,
-            isProfit: profitLoss >= 0,
-            quantity: sellQty > 0 ? sellQty : buyQty,
-            buyPrice: buyPrice,
-            sellPrice: sellPrice,
-            fee: parseFloat(tx.fee || 0),
-            tax: parseFloat(tx.tl_tax || 0)
-        };
+        // 같은 날 매수와 매도가 모두 있는 경우 -> 2개의 거래로 분리
+        if (buyAmount > 0 && sellAmount > 0) {
+            console.log(`🔄 분할 거래: ${tx.prdt_name || '종목명 없음'} (${date}) - 매수: ${buyAmount.toLocaleString()}원, 매도: ${sellAmount.toLocaleString()}원, 현재 보유: ${hldgQty}주`);
 
-        // 손실 거래 디버깅
-        if (profitLoss < 0) {
-            console.log('🔵 손실 거래 발견:', {
-                종목명: processed.stockName,
-                손익: profitLoss,
-                매수금액: buyAmount,
-                매도금액: sellAmount
+            // 1) 매도 거래 (익절/손절)
+            processedTransactions.push({
+                date: date,
+                stockCode: tx.pdno,
+                stockName: tx.prdt_name || '종목명 없음',
+                buyAmount: 0, // 매도 카드에는 매수금액 0
+                sellAmount: sellAmount,
+                profitLoss: profitLoss,
+                profitLossRate: profitLossRate,
+                isProfit: profitLoss >= 0,
+                quantity: sellQty,
+                buyPrice: buyPrice,
+                sellPrice: sellPrice,
+                fee: parseFloat(tx.fee || 0),
+                tax: parseFloat(tx.tl_tax || 0),
+                holdingQty: 0 // 매도 거래는 보유수량 0
+            });
+
+            // 2) 매수 거래 (새로운 포지션) - 현재 보유 중인 경우만
+            if (hldgQty > 0) {
+                console.log(`  ✅ 매수 거래 추가 (현재 ${hldgQty}주 보유 중)`);
+                processedTransactions.push({
+                    date: date,
+                    stockCode: tx.pdno,
+                    stockName: tx.prdt_name || '종목명 없음',
+                    buyAmount: buyAmount,
+                    sellAmount: 0, // 매수 카드에는 매도금액 0
+                    profitLoss: 0,
+                    profitLossRate: 0,
+                    isProfit: true,
+                    quantity: buyQty,
+                    buyPrice: buyPrice,
+                    sellPrice: 0,
+                    fee: 0,
+                    tax: 0,
+                    holdingQty: hldgQty // 현재 보유수량
+                });
+            } else {
+                console.log(`  🚫 매수 거래 제외 (현재 미보유)`);
+            }
+        } else {
+            // 매수만 또는 매도만 있는 경우
+            processedTransactions.push({
+                date: date,
+                stockCode: tx.pdno,
+                stockName: tx.prdt_name || '종목명 없음',
+                buyAmount: buyAmount,
+                sellAmount: sellAmount,
+                profitLoss: profitLoss,
+                profitLossRate: profitLossRate,
+                isProfit: profitLoss >= 0,
+                quantity: sellQty > 0 ? sellQty : buyQty,
+                buyPrice: buyPrice,
+                sellPrice: sellPrice,
+                fee: parseFloat(tx.fee || 0),
+                tax: parseFloat(tx.tl_tax || 0),
+                holdingQty: hldgQty // 현재 보유수량
             });
         }
+    });
 
-        console.log('Processed transaction:', processed);
-        return processed;
-    }).filter(tx => {
+    return processedTransactions.filter(tx => {
         // 매수했거나 매도한 거래 모두 표시
         return (tx.buyAmount > 0 || tx.sellAmount > 0) && tx.date;
     });
 }
 
 // Display Transactions
-function displayTransactions(transactions) {
+function displayTransactions(transactions, currentStockCodes) {
     const transactionsList = document.getElementById('transactionsList');
     transactionsList.innerHTML = '';
 
@@ -197,31 +254,104 @@ function displayTransactions(transactions) {
         return;
     }
 
-    // 종목별 최근 매도 날짜 추적
-    const lastSellDateByStock = {};
+    // 종목별로 거래 이력을 분석
+    const stockHistory = {};
+
     transactions.forEach(tx => {
+        if (!stockHistory[tx.stockCode]) {
+            stockHistory[tx.stockCode] = {
+                stockName: tx.stockName,
+                buys: [],  // 매수 거래들
+                sells: []  // 매도 거래들
+            };
+        }
+
+        if (tx.buyAmount > 0) {
+            stockHistory[tx.stockCode].buys.push({
+                date: tx.date,
+                amount: tx.buyAmount,
+                price: tx.buyPrice,
+                quantity: tx.quantity,
+                holdingQty: tx.holdingQty
+            });
+        }
+
         if (tx.sellAmount > 0) {
-            if (!lastSellDateByStock[tx.stockCode] || tx.date > lastSellDateByStock[tx.stockCode]) {
-                lastSellDateByStock[tx.stockCode] = tx.date;
-            }
+            stockHistory[tx.stockCode].sells.push({
+                date: tx.date,
+                amount: tx.sellAmount,
+                price: tx.sellPrice,
+                quantity: tx.quantity,
+                profitLoss: tx.profitLoss,
+                profitLossRate: tx.profitLossRate,
+                isProfit: tx.isProfit,
+                fee: tx.fee,
+                tax: tx.tax,
+                buyPrice: tx.buyPrice,
+                holdingQty: tx.holdingQty
+            });
         }
     });
 
-    // 종목별 매수 날짜 매핑 (매도 카드에 표시용)
-    const buyDateByStock = {};
-    transactions.forEach(tx => {
-        // 매수만 한 거래
+    // 현재 보유 중인 종목은 계좌 잔고에서 가져온 currentStockCodes 사용
+    const currentlyHeldStocks = currentStockCodes;
+
+    // 매도 거래별로 해당하는 매수 날짜 찾기 (각 매도에 대해 그 이전 매수 날짜)
+    // 거래를 날짜순으로 정렬
+    const sortedTransactions = [...transactions].sort((a, b) => a.date.localeCompare(b.date));
+
+    // 종목별 매수 날짜 스택 (FIFO)
+    const buyDatesStack = {};
+    const sellToBuyDateMap = {}; // 매도 거래 -> 매수 날짜 매핑
+
+    sortedTransactions.forEach(tx => {
+        const key = `${tx.stockCode}-${tx.date}`;
+
+        if (!buyDatesStack[tx.stockCode]) {
+            buyDatesStack[tx.stockCode] = [];
+        }
+
+        // 매수 거래 (분할된 거래 포함)
         if (tx.buyAmount > 0 && tx.sellAmount === 0) {
-            if (!buyDateByStock[tx.stockCode] || tx.date > buyDateByStock[tx.stockCode]) {
-                buyDateByStock[tx.stockCode] = tx.date;
+            // 매수 날짜를 스택에 추가
+            buyDatesStack[tx.stockCode].push(tx.date);
+        }
+
+        // 매도 거래
+        if (tx.sellAmount > 0) {
+            // 같은 날 매수+매도면 그날 매수 사용
+            if (tx.buyAmount > 0) {
+                sellToBuyDateMap[key] = tx.date;
+            } else {
+                // 다른 날 매수: 가장 최근 매수 날짜 사용 (스택에서 가장 마지막)
+                const buyDates = buyDatesStack[tx.stockCode] || [];
+                if (buyDates.length > 0) {
+                    // 매도 날짜 이전의 가장 가까운 매수 날짜 찾기
+                    const validBuyDates = buyDates.filter(d => d <= tx.date);
+                    if (validBuyDates.length > 0) {
+                        sellToBuyDateMap[key] = validBuyDates[validBuyDates.length - 1];
+                    }
+                }
             }
         }
-        // 당일 매수+매도 거래 (buyAmount와 sellAmount가 모두 있는 경우)
-        // 이 경우 매도 거래 자체에 매수 정보가 포함되어 있으므로 별도 매수 날짜 불필요
     });
 
-    console.log('🔴 종목별 최근 매도 날짜:', lastSellDateByStock);
-    console.log('🟢 종목별 매수 날짜:', buyDateByStock);
+    console.log('📅 매도->매수 날짜 매핑:', sellToBuyDateMap);
+
+    // 현재 보유 중인 종목의 가장 최근 매수 날짜 찾기
+    const latestBuyDateForHolding = {};
+    transactions.forEach(tx => {
+        // 현재 보유 중이고, 매수가 있고, 보유수량이 있는 거래
+        if (currentlyHeldStocks.has(tx.stockCode) && tx.buyAmount > 0 && tx.holdingQty > 0) {
+            if (!latestBuyDateForHolding[tx.stockCode] || tx.date > latestBuyDateForHolding[tx.stockCode]) {
+                latestBuyDateForHolding[tx.stockCode] = tx.date;
+            }
+        }
+    });
+
+    console.log('💎 현재 보유 중인 종목:', Array.from(currentlyHeldStocks));
+    console.log('📊 종목별 거래 이력:', stockHistory);
+    console.log('🔵 현재 보유 종목의 최근 매수 날짜:', latestBuyDateForHolding);
 
     // Group by date
     const groupedByDate = groupTransactionsByDate(transactions);
@@ -229,37 +359,70 @@ function displayTransactions(transactions) {
     // Sort dates in descending order (newest first)
     const sortedDates = Object.keys(groupedByDate).sort((a, b) => b.localeCompare(a));
 
+    // 각 날짜별로 거래를 정렬: 보유 중인 매수 카드 최상단, 그 다음 매도 카드들
+    sortedDates.forEach(date => {
+        groupedByDate[date].sort((a, b) => {
+            // 보유 중인 매수 카드인지 확인
+            const aIsHeldBuy = (a.buyAmount > 0 && a.sellAmount === 0 && a.holdingQty > 0) ? 0 : 1;
+            const bIsHeldBuy = (b.buyAmount > 0 && b.sellAmount === 0 && b.holdingQty > 0) ? 0 : 1;
+
+            // 보유 중인 매수 카드가 다르면 보유 중인 것을 먼저
+            if (aIsHeldBuy !== bIsHeldBuy) {
+                return aIsHeldBuy - bIsHeldBuy;
+            }
+
+            // 둘 다 보유 중인 매수 카드이거나, 둘 다 아닌 경우
+            // 매도 카드끼리는 종목명 순
+            return 0;
+        });
+        console.log(`📅 ${formatDate(date)} 거래 순서:`, groupedByDate[date].map(tx =>
+            `${tx.stockName} (${tx.sellAmount > 0 ? '매도' : '매수'}${tx.holdingQty > 0 ? `, 보유: ${tx.holdingQty}주` : ''})`
+        ));
+    });
+
     sortedDates.forEach(date => {
         const dateTransactions = groupedByDate[date];
 
         // 이 날짜의 거래를 필터링
         const displayTransactions = dateTransactions.filter(tx => {
-            // 매도 거래는 항상 표시
+            // 매도 거래는 항상 표시 (익절/손절 카드)
             if (tx.sellAmount > 0) {
+                console.log(`✅ 매도 카드 표시: ${tx.stockName} (${tx.isProfit ? '익절' : '손절'}) - 날짜: ${tx.date}`);
                 return true;
             }
-            // 매수 거래 처리
+
+            // 매수만 한 거래 처리 (매도 없음)
             if (tx.buyAmount > 0 && tx.sellAmount === 0) {
-                const lastSellDate = lastSellDateByStock[tx.stockCode];
+                // 현재 보유 중인 종목인지 확인
+                const isCurrentlyHeld = currentlyHeldStocks.has(tx.stockCode);
 
-                // 이 종목을 한 번도 매도한 적 없으면 표시
-                if (!lastSellDate) {
-                    console.log(`✅ 매수 카드 표시: ${tx.stockName} (매도 이력 없음)`);
-                    return true;
+                if (!isCurrentlyHeld) {
+                    // 이미 매도됨 → 매수 카드 숨김 (익절/손절 카드로 전환됨)
+                    console.log(`🚫 매수 카드 숨김: ${tx.stockName} (매도됨 - 익절/손절 카드로 전환) - 날짜: ${tx.date}`);
+                    return false;
                 }
 
-                // 매도 이후의 매수면 표시 (새로운 포지션)
-                if (tx.date > lastSellDate) {
-                    console.log(`✅ 매수 카드 표시: ${tx.stockName} (매도 이후 새로운 매수)`);
-                    return true;
-                }
+                // 현재 보유 중인 종목 - 가장 최근 매수 날짜의 카드만 표시
+                const latestBuyDate = latestBuyDateForHolding[tx.stockCode];
 
-                // 매도 이전의 매수는 숨김
-                console.log(`🚫 매수 카드 숨김: ${tx.stockName} (${lastSellDate}에 이미 매도됨)`);
-                return false;
+                if (latestBuyDate && tx.date === latestBuyDate) {
+                    // 가장 최근 매수 → 매수 카드 표시
+                    console.log(`✅ 매수 카드 표시: ${tx.stockName} (보유 중, 최근 매수) - 날짜: ${tx.date}`);
+                    return true;
+                } else {
+                    // 과거 매수 → 매수 카드 숨김
+                    console.log(`🚫 매수 카드 숨김: ${tx.stockName} (과거 매수, 최근: ${latestBuyDate}) - 날짜: ${tx.date}`);
+                    return false;
+                }
             }
             return false;
         });
+
+        // 표시할 거래가 없으면 날짜 마커도 추가하지 않음
+        if (displayTransactions.length === 0) {
+            console.log(`🚫 ${formatDate(date)}: 표시할 거래 없음`);
+            return;
+        }
 
         // Add date marker
         const dateMarker = document.createElement('div');
@@ -287,13 +450,8 @@ function displayTransactions(transactions) {
                 // 매도 거래면 매수 날짜 추가
                 let buyDate = null;
                 if (tx.sellAmount > 0) {
-                    // 당일 매수+매도면 같은 날짜 사용
-                    if (tx.buyAmount > 0) {
-                        buyDate = tx.date;
-                    } else {
-                        // 다른 날 매수한 경우
-                        buyDate = buyDateByStock[tx.stockCode];
-                    }
+                    const key = `${tx.stockCode}-${tx.date}`;
+                    buyDate = sellToBuyDateMap[key] || null;
                 }
                 const cardHtml = createTransactionCard(tx, type, false, buyDate);
 
@@ -319,13 +477,8 @@ function displayTransactions(transactions) {
                 // 매도 거래면 매수 날짜 추가
                 let buyDate = null;
                 if (tx.sellAmount > 0) {
-                    // 당일 매수+매도면 같은 날짜 사용
-                    if (tx.buyAmount > 0) {
-                        buyDate = tx.date;
-                    } else {
-                        // 다른 날 매수한 경우
-                        buyDate = buyDateByStock[tx.stockCode];
-                    }
+                    const key = `${tx.stockCode}-${tx.date}`;
+                    buyDate = sellToBuyDateMap[key] || null;
                 }
 
                 // 손절은 왼쪽, 나머지는 오른쪽
@@ -378,6 +531,12 @@ function createTransactionCard(transaction, type, isSold = false, buyDate = null
             ? ''
             : '<span class="text-xs text-green-600 font-semibold">보유중</span>';
 
+        // 날짜 포맷팅 (YYYYMMDD -> YY.MM.DD)
+        const formatShortDate = (dateStr) => {
+            if (!dateStr || dateStr.length !== 8) return dateStr;
+            return `${dateStr.substring(2, 4)}.${dateStr.substring(4, 6)}.${dateStr.substring(6, 8)}`;
+        };
+
         return `
             <div class="transaction-card buy-card cursor-pointer" style="border-left: 4px solid #10b981; padding: 12px;" onclick="toggleCardDetails('${cardId}')">
                 <div class="buy-icon transaction-icon" style="background: #10b981;">💰</div>
@@ -389,6 +548,7 @@ function createTransactionCard(transaction, type, isSold = false, buyDate = null
                             <span class="expand-arrow text-gray-400 transition-transform" id="arrow-${cardId}">▼</span>
                         </div>
                     </div>
+                    <div class="text-xs text-gray-500 mt-0.5">매수 ${formatShortDate(transaction.date)}</div>
                     <div class="text-xs text-gray-600 mt-1">매수금액: ${transaction.buyAmount.toLocaleString()}원</div>
 
                     <!-- 상세 정보 (접힌 상태) -->
@@ -415,6 +575,7 @@ function createTransactionCard(transaction, type, isSold = false, buyDate = null
     const isLoss = type === 'loss';
     const icon = isLoss ? '▼' : '▲';
     const colorClass = isLoss ? 'text-blue-600' : 'text-red-600';
+    const bgColorClass = isLoss ? 'bg-blue-50' : 'bg-red-50';
     const cardClass = isLoss ? 'loss-card' : 'profit-card';
     const iconClass = isLoss ? 'loss-icon' : 'profit-icon';
 
@@ -425,9 +586,10 @@ function createTransactionCard(transaction, type, isSold = false, buyDate = null
     };
 
     // 매수 날짜와 매도 날짜 표시
+    // buyDate = 매수 날짜, transaction.date = 매도 날짜
     const dateRange = buyDate
-        ? `${formatShortDate(buyDate)} → ${formatShortDate(transaction.date)}`
-        : formatShortDate(transaction.date);
+        ? `매수 ${formatShortDate(buyDate)} → 매도 ${formatShortDate(transaction.date)}`
+        : `매도 ${formatShortDate(transaction.date)}`;
 
     return `
         <div class="transaction-card ${cardClass} cursor-pointer" style="padding: 12px;" onclick="toggleCardDetails('${cardId}')">
@@ -435,14 +597,15 @@ function createTransactionCard(transaction, type, isSold = false, buyDate = null
             <div>
                 <div class="flex items-center justify-between">
                     <div class="font-bold text-gray-900">${transaction.stockName}</div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-sm ${colorClass} font-semibold">${transaction.profitLossRate >= 0 ? '+' : ''}${transaction.profitLossRate.toFixed(2)}%</span>
+                    <div class="flex items-center gap-1">
+                        <span class="text-sm ${colorClass} font-bold">${transaction.profitLossRate >= 0 ? '+' : ''}${transaction.profitLossRate.toFixed(2)}%</span>
+                        <span class="text-sm ${colorClass} font-bold px-2 py-0.5 ${bgColorClass} rounded">${transaction.profitLoss >= 0 ? '+' : ''}${transaction.profitLoss.toLocaleString()}원</span>
                         <span class="expand-arrow text-gray-400 transition-transform" id="arrow-${cardId}">▼</span>
                     </div>
                 </div>
                 <div class="text-xs text-gray-500 mt-0.5">${dateRange}</div>
                 <div class="text-xs text-gray-600 mt-1">
-                    ${transaction.buyAmount.toLocaleString()}원 → ${transaction.profitLoss >= 0 ? '+' : ''}${transaction.profitLoss.toLocaleString()}원
+                    매수금액: ${transaction.buyAmount.toLocaleString()}원
                 </div>
 
                 <!-- 상세 정보 (접힌 상태) -->
