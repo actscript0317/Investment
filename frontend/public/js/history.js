@@ -98,6 +98,16 @@ async function loadTransactions() {
         const balanceData = await balanceResponse.json();
         const currentHoldings = balanceData.output1 || [];
 
+        // 디버깅: 전체 계좌 잔고 확인 (신용+현금)
+        console.log('📊 전체 계좌 잔고 (신용+현금):', currentHoldings);
+        console.log('📊 거래구분별:', currentHoldings.map(s => ({
+            name: s.prdt_name,
+            code: s.pdno,
+            qty: s.hldg_qty,
+            type: s.trad_dvsn_name || (s.loan_amt && parseInt(s.loan_amt) > 0 ? '신용' : '현금'),
+            loanAmt: s.loan_amt
+        })));
+
         // 현재 보유 중인 종목 코드 목록
         const currentStockCodes = new Set(
             currentHoldings
@@ -105,6 +115,34 @@ async function loadTransactions() {
                 .map(stock => stock.pdno)
         );
         console.log('💎 현재 보유 종목 코드 (계좌 잔고):', Array.from(currentStockCodes));
+
+        // 현재 보유 중인 종목의 현금/신용 구분 Map (종목코드 -> {cash: qty, credit: qty})
+        const creditStockMap = new Map();
+        currentHoldings
+            .filter(stock => parseInt(stock.hldg_qty || 0) > 0)
+            .forEach(stock => {
+                const stockCode = stock.pdno;
+                const qty = parseInt(stock.hldg_qty || 0);
+                const isCredit = stock.trad_dvsn_name === '자기융자' ||
+                                stock.trad_dvsn_name === '신용' ||
+                                (stock.loan_amt && parseInt(stock.loan_amt) > 0);
+
+                if (!creditStockMap.has(stockCode)) {
+                    creditStockMap.set(stockCode, { cash: 0, credit: 0 });
+                }
+
+                const current = creditStockMap.get(stockCode);
+                if (isCredit) {
+                    current.credit += qty;
+                } else {
+                    current.cash += qty;
+                }
+            });
+        console.log('💳 종목별 현금/신용 구분:', Array.from(creditStockMap.entries()).map(([code, split]) => ({
+            code,
+            cash: split.cash,
+            credit: split.credit
+        })));
 
         // 2. 거래내역 조회
         const startDate = document.getElementById('startDate').value.replace(/-/g, '');
@@ -125,11 +163,23 @@ async function loadTransactions() {
         console.log('API Response:', data);
         console.log('Output1:', data.output1);
 
+        // 디버깅: 거래내역의 거래구분 확인
+        if (data.output1 && data.output1.length > 0) {
+            console.log('📊 거래내역 거래구분별:', data.output1.map(tx => ({
+                name: tx.prdt_name,
+                date: tx.ord_dt,
+                type: tx.trad_dvsn_name,
+                buyQty: tx.cblc_qty13,
+                sellQty: tx.sll_qty13,
+                loanAmt: tx.loan_amt
+            })));
+        }
+
         // Process transactions
         if (data.output1 && data.output1.length > 0) {
             allTransactions = processTransactions(data.output1, currentStockCodes);
             console.log('Processed Transactions:', allTransactions);
-            displayTransactions(allTransactions, currentStockCodes);
+            displayTransactions(allTransactions, currentStockCodes, creditStockMap);
             updateSummary(allTransactions);
         } else {
             emptyState.classList.remove('hidden');
@@ -192,7 +242,10 @@ function processTransactions(rawTransactions, currentStockCodes) {
                 sellPrice: sellPrice,
                 fee: parseFloat(tx.fee || 0),
                 tax: parseFloat(tx.tl_tax || 0),
-                holdingQty: 0 // 매도 거래는 보유수량 0
+                holdingQty: 0, // 매도 거래는 보유수량 0
+                tradeDivision: tx.trad_dvsn_name || '', // 거래구분 (현금/신용/자기융자)
+                loanDate: tx.loan_dt || '', // 대출일자 (신용거래 여부)
+                loanAmount: parseFloat(tx.loan_amt || 0) // 대출금액
             });
 
             // 2) 매수 거래 (새로운 포지션) - 현재 보유 중인 경우만
@@ -212,7 +265,10 @@ function processTransactions(rawTransactions, currentStockCodes) {
                     sellPrice: 0,
                     fee: 0,
                     tax: 0,
-                    holdingQty: hldgQty // 현재 보유수량
+                    holdingQty: hldgQty, // 현재 보유수량
+                    tradeDivision: tx.trad_dvsn_name || '', // 거래구분 (현금/신용/자기융자)
+                    loanDate: tx.loan_dt || '', // 대출일자 (신용거래 여부)
+                    loanAmount: parseFloat(tx.loan_amt || 0) // 대출금액
                 });
             } else {
                 console.log(`  🚫 매수 거래 제외 (현재 미보유)`);
@@ -233,7 +289,10 @@ function processTransactions(rawTransactions, currentStockCodes) {
                 sellPrice: sellPrice,
                 fee: parseFloat(tx.fee || 0),
                 tax: parseFloat(tx.tl_tax || 0),
-                holdingQty: hldgQty // 현재 보유수량
+                holdingQty: hldgQty, // 현재 보유수량
+                tradeDivision: tx.trad_dvsn_name || '', // 거래구분 (현금/신용/자기융자)
+                loanDate: tx.loan_dt || '', // 대출일자 (신용거래 여부)
+                loanAmount: parseFloat(tx.loan_amt || 0) // 대출금액
             });
         }
     });
@@ -245,7 +304,7 @@ function processTransactions(rawTransactions, currentStockCodes) {
 }
 
 // Display Transactions
-function displayTransactions(transactions, currentStockCodes) {
+function displayTransactions(transactions, currentStockCodes, creditStockMap = new Map()) {
     const transactionsList = document.getElementById('transactionsList');
     transactionsList.innerHTML = '';
 
@@ -484,13 +543,13 @@ function displayTransactions(transactions, currentStockCodes) {
                 // 손절은 왼쪽, 나머지는 오른쪽
                 if (tx.sellAmount > 0 && !tx.isProfit) {
                     // 손절 - 왼쪽
-                    leftHtml = createTransactionCard(tx, 'loss', false, buyDate);
+                    leftHtml = createTransactionCard(tx, 'loss', false, buyDate, creditStockMap);
                 } else if (tx.sellAmount === 0 && tx.buyAmount > 0) {
                     // 매수(보유중) - 오른쪽
-                    rightHtml = createTransactionCard(tx, 'buy', false, null);
+                    rightHtml = createTransactionCard(tx, 'buy', false, null, creditStockMap);
                 } else if (tx.sellAmount > 0 && tx.isProfit) {
                     // 익절 - 오른쪽
-                    rightHtml = createTransactionCard(tx, 'profit', false, buyDate);
+                    rightHtml = createTransactionCard(tx, 'profit', false, buyDate, creditStockMap);
                 }
 
                 row.innerHTML = `
@@ -521,7 +580,7 @@ function groupTransactionsByDate(transactions) {
 }
 
 // Create Transaction Card
-function createTransactionCard(transaction, type, isSold = false, buyDate = null) {
+function createTransactionCard(transaction, type, isSold = false, buyDate = null, creditStockMap = new Map()) {
     const cardId = `card-${transaction.date}-${transaction.stockCode}-${Math.random().toString(36).substr(2, 9)}`;
 
     // 매수만 한 경우 (매도금액이 0)
@@ -530,6 +589,19 @@ function createTransactionCard(transaction, type, isSold = false, buyDate = null
         const holdingBadge = isSold
             ? ''
             : '<span class="text-xs text-green-600 font-semibold">보유중</span>';
+
+        // 신용매수 여부 확인
+        // 1. 거래내역에서 확인 (loan_dt, loan_amt, trad_dvsn_name)
+        // 2. 계좌 잔고에서 확인 (creditStockMap - credit 수량이 0보다 큰 경우)
+        const stockSplit = creditStockMap.get(transaction.stockCode);
+        const isCreditBuy = transaction.loanDate ||
+                           (transaction.loanAmount && transaction.loanAmount > 0) ||
+                           transaction.tradeDivision === '신용' ||
+                           transaction.tradeDivision === '자기융자' ||
+                           (stockSplit && stockSplit.credit > 0);
+        const creditBadge = isCreditBuy
+            ? '<span class="text-xs text-orange-600 font-semibold ml-1">신용매수</span>'
+            : '';
 
         // 날짜 포맷팅 (YYYYMMDD -> YY.MM.DD)
         const formatShortDate = (dateStr) => {
@@ -544,7 +616,7 @@ function createTransactionCard(transaction, type, isSold = false, buyDate = null
                     <div class="flex items-center justify-between">
                         <div class="font-bold text-gray-900">${transaction.stockName}</div>
                         <div class="flex items-center gap-2">
-                            ${holdingBadge}
+                            ${holdingBadge}${creditBadge}
                             <span class="expand-arrow text-gray-400 transition-transform" id="arrow-${cardId}">▼</span>
                         </div>
                     </div>
@@ -579,6 +651,16 @@ function createTransactionCard(transaction, type, isSold = false, buyDate = null
     const cardClass = isLoss ? 'loss-card' : 'profit-card';
     const iconClass = isLoss ? 'loss-icon' : 'profit-icon';
 
+    // 신용매수 여부 확인 (매도 거래)
+    const stockSplit = creditStockMap.get(transaction.stockCode);
+    const isCreditSell = transaction.loanDate ||
+                        (transaction.loanAmount && transaction.loanAmount > 0) ||
+                        transaction.tradeDivision === '신용' ||
+                        transaction.tradeDivision === '자기융자';
+    const creditBadgeSell = isCreditSell
+        ? '<span class="text-xs text-orange-600 font-semibold ml-1">신용매수</span>'
+        : '';
+
     // 날짜 포맷팅 (YYYYMMDD -> YY.MM.DD)
     const formatShortDate = (dateStr) => {
         if (!dateStr || dateStr.length !== 8) return dateStr;
@@ -596,7 +678,7 @@ function createTransactionCard(transaction, type, isSold = false, buyDate = null
             <div class="${iconClass} transaction-icon">${icon}</div>
             <div>
                 <div class="flex items-center justify-between">
-                    <div class="font-bold text-gray-900">${transaction.stockName}</div>
+                    <div class="font-bold text-gray-900">${transaction.stockName}${creditBadgeSell}</div>
                     <div class="flex items-center gap-1">
                         <span class="text-sm ${colorClass} font-bold">${transaction.profitLossRate >= 0 ? '+' : ''}${transaction.profitLossRate.toFixed(2)}%</span>
                         <span class="text-sm ${colorClass} font-bold px-2 py-0.5 ${bgColorClass} rounded">${transaction.profitLoss >= 0 ? '+' : ''}${transaction.profitLoss.toLocaleString()}원</span>

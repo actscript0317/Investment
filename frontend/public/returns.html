@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>수익률 분석 - 주식 트레이딩</title>
+    <link rel="stylesheet" href="/css/output.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/home.html" class="text-xl sm:text-2xl font-bold text-blue-600">주식 트레이딩</a>
+                </div>
+                <div id="navButtons" class="hidden sm:flex items-center space-x-2 sm:space-x-4">
+                    <a href="/home.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">홈</a>
+                    <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
+                    <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
+                    <a href="/returns.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">수익률</a>
+                    <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">내 계좌</a>
+                </div>
+                <!-- Mobile menu button -->
+                <div class="sm:hidden flex items-center">
+                    <button id="mobileMenuBtn" class="text-gray-700 hover:text-blue-600 p-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile menu -->
+        <div id="mobileMenu" class="hidden sm:hidden bg-white border-t border-gray-200">
+            <div class="px-4 py-3 space-y-2">
+                <a href="/home.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">홈</a>
+                <a href="/chart.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">차트</a>
+                <a href="/history.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">거래내역</a>
+                <a href="/returns.html" class="block text-blue-600 font-semibold px-3 py-2 rounded-md text-sm">수익률</a>
+                <a href="/account.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">내 계좌</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <!-- Page Header -->
+        <div class="mb-6 sm:mb-8">
+            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">📊 수익률 분석</h1>
+            <p class="text-sm sm:text-base text-gray-600 mt-2">일별, 주간별, 월별 수익률을 확인하세요</p>
+        </div>
+
+        <!-- Period Selection -->
+        <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <!-- Period Type Buttons -->
+                <div class="flex flex-wrap gap-2">
+                    <button id="dailyBtn" class="period-btn active px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white">
+                        일별
+                    </button>
+                    <button id="weeklyBtn" class="period-btn px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        주간별
+                    </button>
+                    <button id="monthlyBtn" class="period-btn px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">
+                        월별
+                    </button>
+                </div>
+
+                <!-- Period Range Selector -->
+                <div class="flex flex-wrap gap-2">
+                    <button class="range-btn active px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-indigo-600 text-white" data-range="1">
+                        1개월
+                    </button>
+                    <button class="range-btn px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200" data-range="2">
+                        2개월
+                    </button>
+                    <button class="range-btn px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200" data-range="3">
+                        3개월
+                    </button>
+                    <button class="range-btn px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200" data-range="6">
+                        6개월
+                    </button>
+                    <button class="range-btn px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200" data-range="12">
+                        1년
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Table -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4" id="tableTitle">일별 상세 내역</h2>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="text-center py-12 hidden">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p class="text-gray-600 mt-4">데이터를 불러오는 중...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="text-center py-12 hidden">
+                <div class="text-6xl mb-4">📊</div>
+                <p class="text-xl text-gray-600">거래 데이터가 없습니다</p>
+            </div>
+
+            <!-- Table -->
+            <div id="tableContainer" class="overflow-x-auto -mx-6">
+                <table class="w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">기간</th>
+                            <th class="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">수익률</th>
+                            <th class="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">실현손익</th>
+                            <th class="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">누적손익</th>
+                            <th class="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">누적수익률</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                        <!-- Data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
+            <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4" id="chartTitle">자본 추이 그래프</h2>
+            <div class="relative" style="height: 400px;">
+                <canvas id="returnsChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-white mt-20">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500 text-sm">
+                &copy; 2025 주식 트레이딩 시스템. All rights reserved.
+            </p>
+        </div>
+    </footer>
+
+    <script src="/js/returns.js"></script>
+</body>
+</html>

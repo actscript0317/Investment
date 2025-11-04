@@ -284,6 +284,10 @@ app.get('/history', (req, res) => {
     res.sendFile(path.join(__dirname, '../../frontend/public', 'history.html'));
 });
 
+app.get('/returns', (req, res) => {
+    res.sendFile(path.join(__dirname, '../../frontend/public', 'returns.html'));
+});
+
 // Start server
 const server = app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);

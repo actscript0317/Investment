@@ -30,3 +30,5 @@ Thumbs.db
 # Temporary files
 *.tmp
 *.temp
+backend/src/.token-cache.json
+frontend/public/js/nul
