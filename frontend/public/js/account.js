@@ -117,7 +117,7 @@ function updateAccountSummary(data) {
 }
 
 // 보유 종목 세로 카드 형식으로 업데이트
-function updateHoldingsTable(data) {
+async function updateHoldingsTable(data) {
     const holdingsGrid = document.getElementById('holdingsGrid');
     const holdings = data.output1 || [];
 
@@ -136,7 +136,14 @@ function updateHoldingsTable(data) {
         return;
     }
 
-    holdingsGrid.innerHTML = activeHoldings.map(stock => {
+    // 모든 종목의 가격 레벨을 병렬로 로드
+    const priceLevelsPromises = activeHoldings.map(stock =>
+        loadPriceLevels(stock.pdno || '')
+    );
+    const allPriceLevels = await Promise.all(priceLevelsPromises);
+
+    holdingsGrid.innerHTML = activeHoldings.map((stock, index) => {
+        const stockCode = stock.pdno || '';
         const stockName = stock.prdt_name || '알 수 없음';
         const quantity = parseInt(stock.hldg_qty || '0', 10);
         const avgPrice = parseInt(stock.pchs_avg_pric || '0', 10);
@@ -150,6 +157,54 @@ function updateHoldingsTable(data) {
         const cardBg = isProfit ? 'bg-green-50' : 'bg-blue-50';
         const borderColor = isProfit ? 'border-green-200' : 'border-blue-200';
         const profitSign = isProfit ? '+' : '';
+
+        // 가격 레벨 가져오기
+        const priceLevels = allPriceLevels[index];
+        let priceLevelsHTML = '';
+
+        if (priceLevels && (priceLevels.stopLoss || priceLevels.takeProfit)) {
+            priceLevelsHTML = '<div class="mt-3 pt-3 border-t border-gray-300 space-y-2">';
+
+            if (priceLevels.stopLoss) {
+                const stopLoss = priceLevels.stopLoss;
+                const stopLossProfit = (stopLoss - avgPrice) * quantity;
+                const stopLossPercent = ((stopLoss - avgPrice) / avgPrice * 100).toFixed(2);
+                const stopLossColor = stopLossProfit >= 0 ? 'text-red-600' : 'text-blue-600';
+
+                priceLevelsHTML += `
+                    <div class="bg-blue-50 p-2 rounded">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-600">손절가</span>
+                            <span class="text-sm font-semibold text-blue-700">${formatCurrency(stopLoss)}</span>
+                        </div>
+                        <div class="text-xs ${stopLossColor} mt-1">
+                            ${stopLossProfit >= 0 ? '+' : ''}${formatCurrency(stopLossProfit)} (${stopLossProfit >= 0 ? '+' : ''}${stopLossPercent}%)
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (priceLevels.takeProfit) {
+                const takeProfit = priceLevels.takeProfit;
+                const takeProfitProfit = (takeProfit - avgPrice) * quantity;
+                const takeProfitPercent = ((takeProfit - avgPrice) / avgPrice * 100).toFixed(2);
+                const takeProfitColor = takeProfitProfit >= 0 ? 'text-red-600' : 'text-blue-600';
+
+                priceLevelsHTML += `
+                    <div class="bg-red-50 p-2 rounded">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs text-gray-600">익절가</span>
+                            <span class="text-sm font-semibold text-red-700">${formatCurrency(takeProfit)}</span>
+                        </div>
+                        <div class="text-xs ${takeProfitColor} mt-1">
+                            ${takeProfitProfit >= 0 ? '+' : ''}${formatCurrency(takeProfitProfit)} (${takeProfitProfit >= 0 ? '+' : ''}${takeProfitPercent}%)
+                        </div>
+                    </div>
+                `;
+            }
+
+            priceLevelsHTML += '</div>';
+        }
 
         return `
             <div class="${cardBg} border-2 ${borderColor} rounded-xl p-4 sm:p-5 hover:shadow-lg transition-all duration-300">
@@ -187,12 +242,38 @@ function updateHoldingsTable(data) {
                             <p class="text-base sm:text-lg font-bold ${profitColor}">${profitSign}${profitRate.toFixed(2)}%</p>
                         </div>
                     </div>
+                    ${priceLevelsHTML}
                 </div>
             </div>
         `;
     }).join('');
 }
 
+
+// Load Price Levels from API
+async function loadPriceLevels(stockCode) {
+    try {
+        const response = await fetch(`${API_BASE_URL}/stock/price-levels/${stockCode}`);
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const data = await response.json();
+
+        if (!data) {
+            return null;
+        }
+
+        return {
+            stopLoss: data.stop_loss_price,
+            takeProfit: data.take_profit_price
+        };
+    } catch (error) {
+        console.error('❌ 가격 레벨 로드 실패:', error);
+        return null;
+    }
+}
 
 // 토큰 상태 확인
 async function checkTokenStatus() {

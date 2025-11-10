@@ -46,7 +46,19 @@
       "Bash(do echo \"=== 요청 $i ===\")",
       "Bash(done)",
       "Bash(do echo \"=== $file ===\")",
-      "Bash(timeout 5 bash -c 'while ! curl -s http://localhost:3002/api/health > /dev/null 2>&1; do sleep 0.5; done && echo \"\"Server is ready\"\"')"
+      "Bash(timeout 5 bash -c 'while ! curl -s http://localhost:3002/api/health > /dev/null 2>&1; do sleep 0.5; done && echo \"\"Server is ready\"\"')",
+      "Bash(do)",
+      "Bash(if grep -q \"수익률\" \"$file\")",
+      "Bash(! grep -q \"분석\" \"$file\")",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(if grep -q \"거래내역</a>\" \"$file\")",
+      "Bash(timeout 2 sleep:*)",
+      "Bash(timeout 10 bash -c 'while ! curl -s http://localhost:3002/api/health > /dev/null 2>&1; do sleep 0.5; done && echo \"\"Server ready\"\"')",
+      "Bash(awk:*)",
+      "Bash(timeout 1 sleep:*)",
+      "Bash(git checkout:*)",
+      "Bash(del frontendpublicanalysis.html frontendpublicjsanalysis.js)"
     ],
     "deny": [],
     "ask": []
