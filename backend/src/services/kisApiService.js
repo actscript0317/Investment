@@ -4,11 +4,17 @@ const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 require('dotenv').config();
 
-// Supabase 클라이언트 설정
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+// Supabase 클라이언트 설정 (선택적)
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    supabase = createClient(
+        process.env.SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    console.log('✅ kisApiService: Supabase 클라이언트 초기화 완료');
+} else {
+    console.log('⚠️ kisApiService: Supabase 설정이 없습니다. DB 캐싱이 비활성화됩니다.');
+}
 
 // 한국투자증권 API 설정
 const KIS_BASE_URL = process.env.KIS_BASE_URL || 'https://openapi.koreainvestment.com:9443';

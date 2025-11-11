@@ -11,6 +11,9 @@ require('dotenv').config();
 
 // Supabase 클라이언트 초기화 (선택적)
 let supabase = null;
+// 메모리 기반 임시 저장소 (Supabase가 없을 때 사용)
+let inMemoryPriceLevels = new Map();
+
 if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
     supabase = createClient(
         process.env.SUPABASE_URL,
@@ -18,7 +21,7 @@ if (process.env.SUPABASE_URL && process.env.SUPABASE_KEY) {
     );
     console.log('✅ Supabase 클라이언트 초기화 완료');
 } else {
-    console.log('⚠️ Supabase 설정이 없습니다. 가격 레벨 기능이 비활성화됩니다.');
+    console.log('⚠️ Supabase 설정이 없습니다. 메모리 기반 임시 저장소를 사용합니다.');
 }
 
 // Load stock list from file
@@ -311,37 +314,42 @@ app.get('/returns', (req, res) => {
 // 가격 레벨 저장/업데이트
 app.post('/api/stock/price-levels', async (req, res) => {
     try {
-        if (!supabase) {
-            return res.status(503).json({ error: 'Supabase가 설정되지 않았습니다.' });
-        }
-
         const { stockCode, stockName, stopLoss, takeProfit, entryReason, theme } = req.body;
 
         console.log(`💾 가격 레벨 저장 요청: ${stockCode}`, { stopLoss, takeProfit, entryReason, theme });
 
-        // Upsert (존재하면 업데이트, 없으면 삽입)
-        const { data, error } = await supabase
-            .from('stock_price_levels')
-            .upsert({
-                stock_code: stockCode,
-                stock_name: stockName,
-                stop_loss_price: stopLoss,
-                take_profit_price: takeProfit,
-                entry_reason: entryReason,
-                theme: theme,
-                updated_at: new Date().toISOString()
-            }, {
-                onConflict: 'stock_code'
-            })
-            .select();
+        const priceLevel = {
+            stock_code: stockCode,
+            stock_name: stockName,
+            stop_loss_price: stopLoss,
+            take_profit_price: takeProfit,
+            entry_reason: entryReason,
+            theme: theme,
+            updated_at: new Date().toISOString()
+        };
 
-        if (error) {
-            console.error('❌ 가격 레벨 저장 실패:', error);
-            return res.status(500).json({ error: error.message });
+        if (supabase) {
+            // Supabase에 저장
+            const { data, error } = await supabase
+                .from('stock_price_levels')
+                .upsert(priceLevel, {
+                    onConflict: 'stock_code'
+                })
+                .select();
+
+            if (error) {
+                console.error('❌ Supabase 저장 실패:', error);
+                return res.status(500).json({ error: error.message });
+            }
+
+            console.log('✅ Supabase 저장 성공:', data);
+            res.json({ success: true, data });
+        } else {
+            // 메모리에 저장
+            inMemoryPriceLevels.set(stockCode, priceLevel);
+            console.log('✅ 메모리 저장 성공 (총', inMemoryPriceLevels.size, '개)');
+            res.json({ success: true, data: [priceLevel] });
         }
-
-        console.log('✅ 가격 레벨 저장 성공:', data);
-        res.json({ success: true, data });
 
     } catch (error) {
         console.error('❌ 가격 레벨 저장 오류:', error);
@@ -352,24 +360,27 @@ app.post('/api/stock/price-levels', async (req, res) => {
 // 가격 레벨 조회 (단일 종목)
 app.get('/api/stock/price-levels/:stockCode', async (req, res) => {
     try {
-        if (!supabase) {
-            return res.json(null);
-        }
-
         const { stockCode } = req.params;
 
-        const { data, error} = await supabase
-            .from('stock_price_levels')
-            .select('*')
-            .eq('stock_code', stockCode)
-            .single();
+        if (supabase) {
+            // Supabase에서 조회
+            const { data, error} = await supabase
+                .from('stock_price_levels')
+                .select('*')
+                .eq('stock_code', stockCode)
+                .single();
 
-        if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-            console.error('❌ 가격 레벨 조회 실패:', error);
-            return res.status(500).json({ error: error.message });
+            if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
+                console.error('❌ Supabase 조회 실패:', error);
+                return res.status(500).json({ error: error.message });
+            }
+
+            res.json(data || null);
+        } else {
+            // 메모리에서 조회
+            const data = inMemoryPriceLevels.get(stockCode) || null;
+            res.json(data);
         }
-
-        res.json(data || null);
 
     } catch (error) {
         console.error('❌ 가격 레벨 조회 오류:', error);
@@ -380,21 +391,24 @@ app.get('/api/stock/price-levels/:stockCode', async (req, res) => {
 // 가격 레벨 조회 (전체)
 app.get('/api/stock/price-levels', async (req, res) => {
     try {
-        if (!supabase) {
-            return res.json([]);
+        if (supabase) {
+            // Supabase에서 조회
+            const { data, error } = await supabase
+                .from('stock_price_levels')
+                .select('*')
+                .order('updated_at', { ascending: false });
+
+            if (error) {
+                console.error('❌ Supabase 조회 실패:', error);
+                return res.status(500).json({ error: error.message });
+            }
+
+            res.json(data || []);
+        } else {
+            // 메모리에서 조회
+            const data = Array.from(inMemoryPriceLevels.values());
+            res.json(data);
         }
-
-        const { data, error } = await supabase
-            .from('stock_price_levels')
-            .select('*')
-            .order('updated_at', { ascending: false });
-
-        if (error) {
-            console.error('❌ 전체 가격 레벨 조회 실패:', error);
-            return res.status(500).json({ error: error.message });
-        }
-
-        res.json(data || []);
 
     } catch (error) {
         console.error('❌ 전체 가격 레벨 조회 오류:', error);
@@ -405,25 +419,29 @@ app.get('/api/stock/price-levels', async (req, res) => {
 // 가격 레벨 삭제
 app.delete('/api/stock/price-levels/:stockCode', async (req, res) => {
     try {
-        if (!supabase) {
-            return res.json({ success: true });
-        }
-
         const { stockCode } = req.params;
 
         console.log(`🗑️ 가격 레벨 삭제 요청: ${stockCode}`);
 
-        const { error } = await supabase
-            .from('stock_price_levels')
-            .delete()
-            .eq('stock_code', stockCode);
+        if (supabase) {
+            // Supabase에서 삭제
+            const { error } = await supabase
+                .from('stock_price_levels')
+                .delete()
+                .eq('stock_code', stockCode);
 
-        if (error) {
-            console.error('❌ 가격 레벨 삭제 실패:', error);
-            return res.status(500).json({ error: error.message });
+            if (error) {
+                console.error('❌ Supabase 삭제 실패:', error);
+                return res.status(500).json({ error: error.message });
+            }
+
+            console.log('✅ Supabase 삭제 성공');
+        } else {
+            // 메모리에서 삭제
+            inMemoryPriceLevels.delete(stockCode);
+            console.log('✅ 메모리 삭제 성공 (남은 개수:', inMemoryPriceLevels.size, ')');
         }
 
-        console.log('✅ 가격 레벨 삭제 성공');
         res.json({ success: true });
 
     } catch (error) {

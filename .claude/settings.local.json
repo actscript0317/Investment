@@ -58,7 +58,8 @@
       "Bash(awk:*)",
       "Bash(timeout 1 sleep:*)",
       "Bash(git checkout:*)",
-      "Bash(del frontendpublicanalysis.html frontendpublicjsanalysis.js)"
+      "Bash(del frontendpublicanalysis.html frontendpublicjsanalysis.js)",
+      "Bash(timeout 3 sleep:*)"
     ],
     "deny": [],
     "ask": []
