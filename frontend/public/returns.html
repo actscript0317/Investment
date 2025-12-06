@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,141 +8,161 @@
     <link rel="stylesheet" href="/css/output.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="/home.html" class="text-xl sm:text-2xl font-bold text-blue-600">주식 트레이딩</a>
-                </div>
-                <div id="navButtons" class="hidden sm:flex items-center space-x-2 sm:space-x-4">
-                    <a href="/home.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">홈</a>
-                    <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
-                    <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
-                    <a href="/returns.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">수익률</a>
-                    <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">내 계좌</a>
-                </div>
-                <!-- Mobile menu button -->
-                <div class="sm:hidden flex items-center">
-                    <button id="mobileMenuBtn" class="text-gray-700 hover:text-blue-600 p-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- Mobile menu -->
-        <div id="mobileMenu" class="hidden sm:hidden bg-white border-t border-gray-200">
-            <div class="px-4 py-3 space-y-2">
-                <a href="/home.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">홈</a>
-                <a href="/chart.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">차트</a>
-                <a href="/history.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">거래내역</a>
-                <a href="/returns.html" class="block text-blue-600 font-semibold px-3 py-2 rounded-md text-sm">수익률</a>
-                <a href="/account.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">내 계좌</a>
-            </div>
-        </div>
-    </nav>
 
+<body class="bg-dark-bg text-text-main pb-24">
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <!-- Page Header -->
-        <div class="mb-6 sm:mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">📊 수익률 분석</h1>
-            <p class="text-sm sm:text-base text-gray-600 mt-2">일별, 주간별, 월별 수익률을 확인하세요</p>
-        </div>
+    <main class="max-w-md mx-auto px-5 pt-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-text-main tracking-tight">수익률 분석</h1>
+            <div class="w-8 h-8 rounded-full bg-dark-card border border-gray-800 flex items-center justify-center">
+                <span class="text-lg">📊</span>
+            </div>
+        </header>
 
         <!-- Period Selection -->
-        <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div class="glass-card p-4 mb-6">
+            <div class="flex flex-col gap-4">
                 <!-- Period Type Buttons -->
-                <div class="flex flex-wrap gap-2">
-                    <button id="dailyBtn" class="period-btn active px-4 py-2 rounded-lg font-semibold transition-colors bg-blue-600 text-white">
+                <div class="flex bg-dark-bg rounded-lg p-1 border border-gray-800">
+                    <button id="dailyBtn"
+                        class="period-btn active flex-1 py-2 rounded-md text-xs font-bold transition-all bg-brand-blue text-dark-bg shadow-lg">
                         일별
                     </button>
-                    <button id="weeklyBtn" class="period-btn px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    <button id="weeklyBtn"
+                        class="period-btn flex-1 py-2 rounded-md text-xs font-medium text-text-sub hover:text-text-main transition-all">
                         주간별
                     </button>
-                    <button id="monthlyBtn" class="period-btn px-4 py-2 rounded-lg font-semibold transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    <button id="monthlyBtn"
+                        class="period-btn flex-1 py-2 rounded-md text-xs font-medium text-text-sub hover:text-text-main transition-all">
                         월별
                     </button>
                 </div>
 
                 <!-- Period Range Selector -->
-                <div class="flex flex-wrap gap-2">
-                    <button class="range-btn active px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-indigo-600 text-white" data-range="1">
+                <div class="flex flex-wrap gap-2 justify-center">
+                    <button
+                        class="range-btn active px-3 py-1.5 text-[10px] rounded-full font-medium transition-colors bg-brand-gold text-dark-bg"
+                        data-range="1">
                         1개월
                     </button>
-                    <button class="range-btn px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200" data-range="2">
+                    <button
+                        class="range-btn px-3 py-1.5 text-[10px] rounded-full font-medium transition-colors bg-dark-bg border border-gray-700 text-text-sub hover:border-gray-500"
+                        data-range="2">
                         2개월
                     </button>
-                    <button class="range-btn px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200" data-range="3">
+                    <button
+                        class="range-btn px-3 py-1.5 text-[10px] rounded-full font-medium transition-colors bg-dark-bg border border-gray-700 text-text-sub hover:border-gray-500"
+                        data-range="3">
                         3개월
                     </button>
-                    <button class="range-btn px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200" data-range="6">
+                    <button
+                        class="range-btn px-3 py-1.5 text-[10px] rounded-full font-medium transition-colors bg-dark-bg border border-gray-700 text-text-sub hover:border-gray-500"
+                        data-range="6">
                         6개월
                     </button>
-                    <button class="range-btn px-3 py-2 text-sm rounded-lg font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200" data-range="12">
+                    <button
+                        class="range-btn px-3 py-1.5 text-[10px] rounded-full font-medium transition-colors bg-dark-bg border border-gray-700 text-text-sub hover:border-gray-500"
+                        data-range="12">
                         1년
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- Chart Section -->
+        <div class="glass-card p-4 mb-6">
+            <h2 class="text-sm font-bold text-text-sub mb-4 uppercase tracking-wider" id="chartTitle">자본 추이 그래프</h2>
+            <div class="relative w-full h-[300px] bg-dark-bg rounded-xl border border-gray-800 overflow-hidden p-2">
+                <canvas id="returnsChart"></canvas>
+            </div>
+        </div>
+
         <!-- Details Table -->
-        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4" id="tableTitle">일별 상세 내역</h2>
+        <div class="glass-card p-4">
+            <h2 class="text-sm font-bold text-text-sub mb-4 uppercase tracking-wider" id="tableTitle">일별 상세 내역</h2>
 
             <!-- Loading State -->
             <div id="loadingState" class="text-center py-12 hidden">
-                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <p class="text-gray-600 mt-4">데이터를 불러오는 중...</p>
+                <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-brand-gold"></div>
+                <p class="text-xs text-text-sub mt-4">데이터를 불러오는 중...</p>
             </div>
 
             <!-- Empty State -->
             <div id="emptyState" class="text-center py-12 hidden">
-                <div class="text-6xl mb-4">📊</div>
-                <p class="text-xl text-gray-600">거래 데이터가 없습니다</p>
+                <div class="text-4xl mb-3 opacity-30">📊</div>
+                <p class="text-sm text-text-sub">거래 데이터가 없습니다</p>
             </div>
 
             <!-- Table -->
-            <div id="tableContainer" class="overflow-x-auto -mx-6">
-                <table class="w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-8 py-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">기간</th>
-                            <th class="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">수익률</th>
-                            <th class="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">실현손익</th>
-                            <th class="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">누적손익</th>
-                            <th class="px-8 py-4 text-right text-sm font-semibold text-gray-700 uppercase tracking-wider w-1/5">누적수익률</th>
+            <div id="tableContainer" class="overflow-x-auto -mx-4 px-4">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-gray-800">
+                            <th class="py-3 text-xs font-medium text-text-sub uppercase tracking-wider w-1/4">기간</th>
+                            <th
+                                class="py-3 text-right text-xs font-medium text-text-sub uppercase tracking-wider w-1/4">
+                                수익률</th>
+                            <th
+                                class="py-3 text-right text-xs font-medium text-text-sub uppercase tracking-wider w-1/4">
+                                손익</th>
+                            <th
+                                class="py-3 text-right text-xs font-medium text-text-sub uppercase tracking-wider w-1/4">
+                                누적</th>
                         </tr>
                     </thead>
-                    <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
+                    <tbody id="tableBody" class="divide-y divide-gray-800 text-sm">
                         <!-- Data will be inserted here -->
                     </tbody>
                 </table>
             </div>
         </div>
+    </main>
 
-        <!-- Chart Section -->
-        <div class="bg-white rounded-lg shadow-md p-4 sm:p-6 mb-6">
-            <h2 class="text-lg sm:text-xl font-bold text-gray-900 mb-4" id="chartTitle">자본 추이 그래프</h2>
-            <div class="relative" style="height: 400px;">
-                <canvas id="returnsChart"></canvas>
-            </div>
+    <!-- Bottom Navigation (Sticky) -->
+    <nav class="fixed bottom-0 left-0 w-full bg-dark-card border-t border-gray-800 pb-safe pt-2 px-6 z-50">
+        <div class="flex justify-between items-center max-w-md mx-auto h-16">
+            <a href="/home.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                <span class="text-[10px] font-medium">홈</span>
+            </a>
+            <a href="/chart.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                </svg>
+                <span class="text-[10px] font-medium">차트</span>
+            </a>
+            <a href="/history.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-[10px] font-medium">내역</span>
+            </a>
+            <a href="/returns.html" class="nav-item active flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                    </path>
+                </svg>
+                <span class="text-[10px] font-medium">수익</span>
+            </a>
+            <a href="/account.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span class="text-[10px] font-medium">계좌</span>
+            </a>
         </div>
-    </div>
-
-    <!-- Footer -->
-    <footer class="bg-white mt-20">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-gray-500 text-sm">
-                &copy; 2025 주식 트레이딩 시스템. All rights reserved.
-            </p>
-        </div>
-    </footer>
+    </nav>
 
     <script src="/js/returns.js"></script>
 </body>
+
 </html>

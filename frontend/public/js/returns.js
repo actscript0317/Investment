@@ -3,6 +3,8 @@ let currentPeriod = 'daily'; // daily, weekly, monthly
 let currentRange = 1; // months
 let returnsChart = null;
 let allTransactions = [];
+const BASE_CAPITAL = 4000000; // Fixed Base Capital: 4,000,000 KRW
+let currentTotalAssets = 0; // Will be fetched from API
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -48,13 +50,13 @@ function switchPeriod(period) {
 
     // Update button styles
     document.querySelectorAll('.period-btn').forEach(btn => {
-        btn.classList.remove('active', 'bg-blue-600', 'text-white');
-        btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+        btn.classList.remove('active', 'bg-brand-blue', 'text-dark-bg', 'shadow-lg');
+        btn.classList.add('text-text-sub', 'hover:text-text-main');
     });
 
     const activeBtn = document.getElementById(`${period}Btn`);
-    activeBtn.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
-    activeBtn.classList.add('active', 'bg-blue-600', 'text-white');
+    activeBtn.classList.remove('text-text-sub', 'hover:text-text-main');
+    activeBtn.classList.add('active', 'bg-brand-blue', 'text-dark-bg', 'shadow-lg');
 
     // Update titles
     const periodText = period === 'daily' ? '일별' : period === 'weekly' ? '주간별' : '월별';
@@ -71,12 +73,12 @@ function switchRange(range) {
 
     // Update button styles
     document.querySelectorAll('.range-btn').forEach(btn => {
-        btn.classList.remove('active', 'bg-indigo-600', 'text-white');
-        btn.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
+        btn.classList.remove('active', 'bg-brand-gold', 'text-dark-bg');
+        btn.classList.add('bg-dark-bg', 'border', 'border-gray-700', 'text-text-sub', 'hover:border-gray-500');
     });
 
-    event.target.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200');
-    event.target.classList.add('active', 'bg-indigo-600', 'text-white');
+    event.target.classList.remove('bg-dark-bg', 'border', 'border-gray-700', 'text-text-sub', 'hover:border-gray-500');
+    event.target.classList.add('active', 'bg-brand-gold', 'text-dark-bg');
 
     // Update data display
     updateDisplay();
@@ -93,7 +95,22 @@ async function loadReturnsData() {
     tableContainer.classList.add('hidden');
 
     try {
-        // Get transaction history for the past 1 year
+        // 1. Fetch Current Balance to get Total Assets
+        const balanceResponse = await fetch('/api/account/balance');
+        if (!balanceResponse.ok) {
+            throw new Error('Failed to fetch account balance');
+        }
+        const balanceData = await balanceResponse.json();
+
+        if (balanceData.output2 && balanceData.output2.length > 0) {
+            currentTotalAssets = parseFloat(balanceData.output2[0].tot_evlu_amt);
+            console.log(`💰 현재 총 자산: ${currentTotalAssets.toLocaleString()}원`);
+        } else {
+            console.warn('⚠️ 자산 정보를 찾을 수 없습니다.');
+            currentTotalAssets = BASE_CAPITAL; // Fallback
+        }
+
+        // 2. Get transaction history for the past 1 year
         const endDate = new Date();
         const startDate = new Date();
         startDate.setFullYear(startDate.getFullYear() - 1);
@@ -277,17 +294,33 @@ function getWeekStart(date) {
 
 // Calculate Cumulative Data
 function calculateCumulativeData(periodData) {
+    // 1. Calculate total profit over the entire displayed period
+    const totalProfitInPeriod = periodData.reduce((sum, item) => sum + item.totalProfit, 0);
+
+    // 2. Determine Start Capital
+    // Start Capital = Current Total Assets - Total Profit in Period
+    // This ensures the graph ends at the Current Total Assets
+    let startCapital = currentTotalAssets - totalProfitInPeriod;
+
+    // Safety check
+    if (startCapital <= 0) {
+        console.warn('⚠️ Calculated start capital is <= 0, using fallback.');
+        startCapital = BASE_CAPITAL;
+    }
+
+    console.log(`💰 Capital Calculation: Current=${currentTotalAssets}, Profit=${totalProfitInPeriod}, Start=${startCapital}`);
+
     let cumulativeProfit = 0;
-    const baseAmount = 4000000; // 400만원 기준
 
     return periodData.map(item => {
         cumulativeProfit += item.totalProfit;
 
-        // 400만원 기준 누적 수익률
-        const cumulativeReturnRate = (cumulativeProfit / baseAmount) * 100;
+        // Total Capital at this point (Historical)
+        const totalCapital = startCapital + cumulativeProfit;
 
-        // 총 자본 = 기준금액 + 누적손익
-        const totalCapital = baseAmount + cumulativeProfit;
+        // Cumulative Return Rate based on Fixed Base Capital (4,000,000 KRW)
+        // Formula: (Current Capital - Base Capital) / Base Capital * 100
+        const cumulativeReturnRate = ((totalCapital - BASE_CAPITAL) / BASE_CAPITAL) * 100;
 
         return {
             ...item,
@@ -310,11 +343,10 @@ function updateChart(periodData) {
     // Prepare data
     const labels = periodData.map(item => formatPeriodLabel(item.period, currentPeriod));
     const capitalData = periodData.map(item => item.totalCapital);
-    const baseAmount = 4000000;
 
     // Find min and max for better scaling
-    const minCapital = Math.min(...capitalData, baseAmount);
-    const maxCapital = Math.max(...capitalData, baseAmount);
+    const minCapital = Math.min(...capitalData, BASE_CAPITAL);
+    const maxCapital = Math.max(...capitalData, BASE_CAPITAL);
     const padding = (maxCapital - minCapital) * 0.1;
 
     // Create capital growth chart
@@ -326,21 +358,21 @@ function updateChart(periodData) {
                 {
                     label: '총 자본 (원)',
                     data: capitalData,
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: '#66FCF1', // brand-blue
+                    backgroundColor: 'rgba(102, 252, 241, 0.1)',
                     borderWidth: 3,
                     tension: 0.4,
                     fill: true,
-                    pointRadius: 5,
-                    pointHoverRadius: 7,
-                    pointBackgroundColor: capitalData.map(val => val >= baseAmount ? 'rgb(239, 68, 68)' : 'rgb(59, 130, 246)'),
-                    pointBorderColor: '#fff',
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    pointBackgroundColor: '#0B0C10', // dark-bg
+                    pointBorderColor: '#66FCF1',
                     pointBorderWidth: 2
                 },
                 {
-                    label: '기준 자본 (400만원)',
-                    data: new Array(capitalData.length).fill(baseAmount),
-                    borderColor: 'rgba(156, 163, 175, 0.5)',
+                    label: `기준 자본 (${BASE_CAPITAL.toLocaleString()}원)`,
+                    data: new Array(capitalData.length).fill(BASE_CAPITAL),
+                    borderColor: 'rgba(176, 176, 176, 0.3)', // text-sub with opacity
                     borderWidth: 2,
                     borderDash: [5, 5],
                     fill: false,
@@ -361,25 +393,31 @@ function updateChart(periodData) {
                     display: true,
                     position: 'top',
                     labels: {
+                        color: '#B0B0B0', // text-sub
                         font: {
-                            size: 13,
-                            weight: 'bold'
+                            family: 'Inter',
+                            size: 12
                         }
                     }
                 },
                 tooltip: {
+                    backgroundColor: '#1F2833', // dark-card
+                    titleColor: '#FFFFFF',
+                    bodyColor: '#B0B0B0',
+                    borderColor: '#333',
+                    borderWidth: 1,
                     callbacks: {
-                        label: function(context) {
+                        label: function (context) {
                             let label = context.dataset.label || '';
                             if (label) {
-                                label += ': ';
+                                label = label.split('(')[0].trim() + ': ';
                             }
                             if (context.parsed.y !== null) {
                                 label += context.parsed.y.toLocaleString() + '원';
 
                                 // For capital line, also show profit/loss from base
                                 if (context.datasetIndex === 0) {
-                                    const profit = context.parsed.y - baseAmount;
+                                    const profit = context.parsed.y - BASE_CAPITAL;
                                     label += ` (${profit >= 0 ? '+' : ''}${profit.toLocaleString()}원)`;
                                 }
                             }
@@ -394,25 +432,22 @@ function updateChart(periodData) {
                     display: true,
                     position: 'left',
                     title: {
-                        display: true,
-                        text: '총 자본 (원)',
-                        font: {
-                            size: 14,
-                            weight: 'bold'
-                        }
+                        display: false
                     },
                     min: minCapital - padding,
                     max: maxCapital + padding,
                     ticks: {
-                        callback: function(value) {
-                            return value.toLocaleString() + '원';
+                        color: '#B0B0B0', // text-sub
+                        callback: function (value) {
+                            return (value / 10000).toLocaleString() + '만';
                         },
                         font: {
-                            size: 12
+                            family: 'Inter',
+                            size: 11
                         }
                     },
                     grid: {
-                        color: 'rgba(0, 0, 0, 0.05)'
+                        color: 'rgba(255, 255, 255, 0.05)'
                     }
                 },
                 x: {
@@ -420,7 +455,9 @@ function updateChart(periodData) {
                         display: false
                     },
                     ticks: {
+                        color: '#B0B0B0', // text-sub
                         font: {
+                            family: 'Inter',
                             size: 11
                         }
                     }
@@ -438,7 +475,7 @@ function updateTable(periodData) {
     if (periodData.length === 0) {
         tableBody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-8 py-12 text-center text-gray-500 text-base">
+                <td colspan="5" class="px-8 py-12 text-center text-text-sub text-base">
                     데이터가 없습니다
                 </td>
             </tr>
@@ -451,28 +488,25 @@ function updateTable(periodData) {
 
     sortedData.forEach(item => {
         const row = document.createElement('tr');
-        row.className = 'hover:bg-gray-50 transition-colors';
+        row.className = 'hover:bg-gray-800 transition-colors border-b border-gray-800';
 
-        const returnClass = item.returnRate >= 0 ? 'text-red-600' : 'text-blue-600';
-        const profitClass = item.totalProfit >= 0 ? 'text-red-600' : 'text-blue-600';
-        const cumulativeProfitClass = item.cumulativeProfit >= 0 ? 'text-red-600' : 'text-blue-600';
-        const cumulativeReturnClass = item.cumulativeReturnRate >= 0 ? 'text-red-600' : 'text-blue-600';
+        const returnClass = item.returnRate >= 0 ? 'text-neon-up' : 'text-neon-down';
+        const profitClass = item.totalProfit >= 0 ? 'text-neon-up' : 'text-neon-down';
+        const cumulativeProfitClass = item.cumulativeProfit >= 0 ? 'text-neon-up' : 'text-neon-down';
+        const cumulativeReturnClass = item.cumulativeReturnRate >= 0 ? 'text-neon-up' : 'text-neon-down';
 
         row.innerHTML = `
-            <td class="px-8 py-5 whitespace-nowrap text-base font-medium text-gray-900">
+            <td class="py-4 text-xs font-medium text-text-main">
                 ${formatPeriodLabel(item.period, currentPeriod)}
             </td>
-            <td class="px-8 py-5 whitespace-nowrap text-base font-bold ${returnClass} text-right">
+            <td class="py-4 text-xs font-bold ${returnClass} text-right">
                 ${item.returnRate >= 0 ? '+' : ''}${item.returnRate.toFixed(2)}%
             </td>
-            <td class="px-8 py-5 whitespace-nowrap text-base font-bold ${profitClass} text-right">
-                ${item.totalProfit >= 0 ? '+' : ''}${item.totalProfit.toLocaleString()}원
+            <td class="py-4 text-xs font-bold ${profitClass} text-right">
+                ${item.totalProfit >= 0 ? '+' : ''}${item.totalProfit.toLocaleString()}
             </td>
-            <td class="px-8 py-5 whitespace-nowrap text-base font-bold ${cumulativeProfitClass} text-right">
-                ${item.cumulativeProfit >= 0 ? '+' : ''}${item.cumulativeProfit.toLocaleString()}원
-            </td>
-            <td class="px-8 py-5 whitespace-nowrap text-lg font-extrabold ${cumulativeReturnClass} text-right">
-                ${item.cumulativeReturnRate >= 0 ? '+' : ''}${item.cumulativeReturnRate.toFixed(2)}%
+            <td class="py-4 text-xs font-bold ${cumulativeProfitClass} text-right">
+                ${item.cumulativeProfit >= 0 ? '+' : ''}${item.cumulativeProfit.toLocaleString()}
             </td>
         `;
 

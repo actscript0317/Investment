@@ -1,155 +1,162 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>내 계좌 - 주식 트레이딩 시스템</title>
     <link rel="stylesheet" href="/css/output.css">
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="/home.html" class="text-xl sm:text-2xl font-bold text-blue-600">주식 트레이딩</a>
-                </div>
-                <div class="hidden sm:flex items-center space-x-2 sm:space-x-4">
-                    <a href="/home.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">홈</a>
-                    <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
-                    <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
-                    <a href="/returns.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">수익률</a>
-                    <a href="/account.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">내 계좌</a>
-                </div>
-                <!-- Mobile menu button -->
-                <div class="sm:hidden flex items-center">
-                    <button id="mobileMenuBtn" class="text-gray-700 hover:text-blue-600 p-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </div>
-        <!-- Mobile menu -->
-        <div id="mobileMenu" class="hidden sm:hidden bg-white border-t border-gray-200">
-            <div class="px-4 py-3 space-y-2">
-                <a href="/home.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">홈</a>
-                <a href="/chart.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">차트</a>
-                <a href="/history.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">거래내역</a>
-                <a href="/returns.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">수익률</a>
-                <a href="/account.html" class="block text-blue-600 font-semibold hover:bg-gray-50 px-3 py-2 rounded-md text-sm">내 계좌</a>
-            </div>
-        </div>
-    </nav>
 
+<body class="bg-dark-bg text-text-main pb-24">
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-        <!-- Page Header -->
-        <div class="mb-6 sm:mb-8">
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">내 계좌</h1>
-            <p class="mt-1 sm:mt-2 text-sm sm:text-base text-gray-600">계좌 잔고 및 보유 종목을 확인하세요</p>
-        </div>
+    <main class="max-w-md mx-auto px-5 pt-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6">
+            <h1 class="text-2xl font-bold text-text-main tracking-tight">내 계좌</h1>
+            <div class="w-8 h-8 rounded-full bg-dark-card border border-gray-800 flex items-center justify-center">
+                <span class="text-lg">💳</span>
+            </div>
+        </header>
 
-        <!-- Token Status Card (접기/펼치기 가능) -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5 mb-6 sm:mb-12">
-            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-                <div class="flex items-center gap-3 sm:gap-4 flex-1">
-                    <h2 class="text-sm sm:text-base font-medium text-gray-700">API 토큰</h2>
+        <!-- Token Status Card (Collapsible) -->
+        <div class="glass-card p-4 mb-6">
+            <div class="flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-sm font-medium text-text-sub">API 토큰</h2>
                     <p id="tokenStatusInline" class="inline-flex items-center">
-                        <span class="w-2 h-2 rounded-full bg-gray-400 mr-2"></span>
-                        <span class="text-xs sm:text-sm text-gray-600">확인 중...</span>
+                        <span class="w-2 h-2 rounded-full bg-gray-600 mr-2"></span>
+                        <span class="text-xs text-text-sub">확인 중...</span>
                     </p>
                 </div>
-                <div class="flex items-center gap-2 sm:gap-3">
-                    <button id="toggleTokenDetails" class="text-gray-500 hover:text-gray-700 px-2 py-1 text-xs sm:text-sm transition-colors">
-                        <span id="toggleIcon">▼</span> 상세
-                    </button>
-                </div>
+                <button id="toggleTokenDetails"
+                    class="text-text-sub hover:text-text-main px-2 py-1 text-xs transition-colors">
+                    <span id="toggleIcon">▼</span> 상세
+                </button>
             </div>
 
-            <!-- 접기/펼치기 가능한 상세 정보 -->
-            <div id="tokenDetails" class="hidden mt-4 pt-4 border-t border-gray-100">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-1">상태</p>
-                        <p id="tokenStatus" class="text-sm font-medium text-gray-900">
+            <!-- Collapsible Details -->
+            <div id="tokenDetails" class="hidden mt-4 pt-4 border-t border-gray-800">
+                <div class="grid grid-cols-1 gap-3 mb-4">
+                    <div class="bg-dark-bg p-3 rounded-lg border border-gray-800">
+                        <p class="text-xs text-text-sub mb-1">상태</p>
+                        <p id="tokenStatus" class="text-sm font-medium text-text-main">
                             <span class="inline-flex items-center">
-                                <span class="w-2 h-2 rounded-full bg-gray-400 mr-1.5"></span>
+                                <span class="w-2 h-2 rounded-full bg-gray-600 mr-1.5"></span>
                                 확인 중
                             </span>
                         </p>
                     </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-1">발급 시간</p>
-                        <p id="tokenIssueTime" class="text-xs sm:text-sm font-medium text-gray-900">-</p>
-                    </div>
-                    <div class="bg-gray-50 p-3 rounded-lg">
-                        <p class="text-xs text-gray-500 mb-1">만료 시간</p>
-                        <p id="tokenExpireTime" class="text-xs sm:text-sm font-medium text-gray-900">-</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="bg-dark-bg p-3 rounded-lg border border-gray-800">
+                            <p class="text-xs text-text-sub mb-1">발급 시간</p>
+                            <p id="tokenIssueTime" class="text-xs font-medium text-text-main">-</p>
+                        </div>
+                        <div class="bg-dark-bg p-3 rounded-lg border border-gray-800">
+                            <p class="text-xs text-text-sub mb-1">만료 시간</p>
+                            <p id="tokenExpireTime" class="text-xs font-medium text-text-main">-</p>
+                        </div>
                     </div>
                 </div>
-                <div class="flex justify-center">
-                    <button id="issueTokenBtn" class="bg-green-500 hover:bg-green-600 text-white font-medium px-4 sm:px-6 py-2 sm:py-2.5 rounded-lg text-sm transition-all shadow-sm hover:shadow w-full sm:w-auto">
-                        토큰 발급
-                    </button>
-                </div>
+                <button id="issueTokenBtn"
+                    class="w-full bg-brand-gold hover:bg-yellow-600 text-dark-bg font-bold py-2.5 rounded-xl text-sm transition-all shadow-glow">
+                    토큰 발급
+                </button>
             </div>
 
-            <div id="tokenMessage" class="mt-4 p-3 rounded-lg hidden">
+            <div id="tokenMessage" class="mt-4 p-3 rounded-lg hidden text-sm">
                 <!-- Message will be inserted here -->
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
-            <!-- 계좌 요약 (왼쪽 1/5) -->
-            <div class="lg:col-span-1">
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
-                    <div class="flex justify-between items-center mb-3 sm:mb-4">
-                        <h2 class="text-sm sm:text-base font-semibold text-gray-900">계좌 요약</h2>
-                        <button id="refreshBalanceBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg text-xs transition-colors">
-                            새로고침
-                        </button>
-                    </div>
-                    <div id="accountSummary" class="space-y-2 sm:space-y-3">
-                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 p-3 rounded-lg">
-                            <p class="text-xs text-gray-600 mb-1">총 평가금액</p>
-                            <p id="totalAssets" class="text-base sm:text-lg font-bold text-gray-900">로딩 중...</p>
-                        </div>
-                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 p-3 rounded-lg">
-                            <p class="text-xs text-gray-600 mb-1">평가손익</p>
-                            <p id="totalProfit" class="text-base sm:text-lg font-bold">로딩 중...</p>
-                        </div>
-                        <div class="bg-gradient-to-br from-amber-50 to-orange-50 p-3 rounded-lg">
-                            <p class="text-xs text-gray-600 mb-1">수익률</p>
-                            <p id="totalProfitRate" class="text-base sm:text-lg font-bold">로딩 중...</p>
-                        </div>
-                    </div>
-                </div>
+        <!-- Account Summary -->
+        <div class="mb-6">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-base font-bold text-text-main">계좌 요약</h2>
+                <button id="refreshBalanceBtn"
+                    class="text-xs text-brand-blue hover:text-cyan-300 flex items-center gap-1">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                        </path>
+                    </svg>
+                    새로고침
+                </button>
             </div>
-
-            <!-- 보유 종목 (오른쪽 4/5 - 세로 카드 형식) -->
-            <div class="lg:col-span-4">
-                <h2 class="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">보유 종목</h2>
-                <div id="holdingsGrid" class="space-y-3 max-w-full lg:max-w-4xl">
-                    <div class="text-center py-8 text-gray-400 text-sm">
-                        로딩 중...
+            <div id="accountSummary" class="glass-card p-5 space-y-4">
+                <div class="flex justify-between items-end border-b border-gray-800 pb-4">
+                    <span class="text-sm text-text-sub">총 평가금액</span>
+                    <span id="totalAssets" class="text-2xl font-bold text-text-main">로딩 중...</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <div>
+                        <p class="text-xs text-text-sub mb-1">평가손익</p>
+                        <p id="totalProfit" class="text-lg font-bold">로딩 중...</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs text-text-sub mb-1">수익률</p>
+                        <p id="totalProfitRate" class="text-lg font-bold">로딩 중...</p>
                     </div>
                 </div>
             </div>
         </div>
 
-    </div>
-
-    <!-- Footer -->
-    <footer class="bg-white mt-20">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-gray-500 text-sm">
-                &copy; 2025 주식 트레이딩 시스템. All rights reserved.
-            </p>
+        <!-- Holdings List -->
+        <div>
+            <h2 class="text-base font-bold text-text-main mb-3">보유 종목</h2>
+            <div id="holdingsGrid" class="space-y-3">
+                <div
+                    class="text-center py-12 text-text-sub text-sm bg-dark-card rounded-2xl border border-gray-800 border-dashed">
+                    로딩 중...
+                </div>
+            </div>
         </div>
-    </footer>
+    </main>
+
+    <!-- Bottom Navigation (Sticky) -->
+    <nav class="fixed bottom-0 left-0 w-full bg-dark-card border-t border-gray-800 pb-safe pt-2 px-6 z-50">
+        <div class="flex justify-between items-center max-w-md mx-auto h-16">
+            <a href="/home.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                <span class="text-[10px] font-medium">홈</span>
+            </a>
+            <a href="/chart.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path>
+                </svg>
+                <span class="text-[10px] font-medium">차트</span>
+            </a>
+            <a href="/history.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-[10px] font-medium">내역</span>
+            </a>
+            <a href="/returns.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z">
+                    </path>
+                </svg>
+                <span class="text-[10px] font-medium">수익</span>
+            </a>
+            <a href="/account.html" class="nav-item active flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span class="text-[10px] font-medium">계좌</span>
+            </a>
+        </div>
+    </nav>
 
     <script type="module" src="/js/account.js"></script>
 </body>
+
 </html>

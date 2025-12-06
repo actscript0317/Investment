@@ -55,6 +55,29 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', message: 'Server is running' });
 });
 
+// 종목 검색 API
+app.get('/api/search', (req, res) => {
+    try {
+        const query = req.query.q || '';
+
+        if (!query) {
+            return res.json([]);
+        }
+
+        // 검색어로 종목 코드 또는 종목명 필터링
+        const results = stockList.filter(stock =>
+            stock.code.includes(query) ||
+            stock.name.includes(query)
+        );
+
+        console.log(`🔍 종목 검색: "${query}" - ${results.length}개 결과`);
+        res.json(results.slice(0, 20)); // 최대 20개만 반환
+    } catch (error) {
+        console.error('❌ 종목 검색 실패:', error);
+        res.status(500).json({ error: '종목 검색에 실패했습니다.' });
+    }
+});
+
 // 한국투자증권 API Routes
 // 주식 시세 조회
 app.get('/api/stock/quote/:stockCode', async (req, res) => {

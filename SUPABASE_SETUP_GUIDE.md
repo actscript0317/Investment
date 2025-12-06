@@ -65,7 +65,7 @@ npm start
 
 ## 6단계: 테스트
 
-1. 브라우저에서 http://localhost:3002/chart.html 접속
+1. 브라우저에서 http://localhost:3000/chart.html 접속
 2. 종목 검색 (예: 삼성전자)
 3. 손절가/익절가 설정
 4. 페이지 새로고침 후 설정이 유지되는지 확인

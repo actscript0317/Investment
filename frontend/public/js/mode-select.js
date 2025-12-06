@@ -1,8 +1,6 @@
 // Mode Selection Page JavaScript
 // API Base URL - 상대 경로 사용 (모바일/배포 환경 대응)
-const API_BASE_URL = window.location.hostname === 'localhost'
-    ? 'http://localhost:3002/api'
-    : '/api';
+const API_BASE_URL = '/api';
 
 // 페이지 로드 확인
 console.log('Mode selection page loaded');
@@ -126,7 +124,7 @@ function checkCurrentMode() {
         // 모드가 선택되어 있는지 확인 (다른 페이지에서 왔는지)
         const referrer = document.referrer;
         if (referrer && (referrer.includes('home.html') || referrer.includes('chart.html') ||
-                         referrer.includes('history.html') || referrer.includes('account.html'))) {
+            referrer.includes('history.html') || referrer.includes('account.html'))) {
             currentModeDisplay.classList.remove('hidden');
             currentModeText.textContent = '사용자 모드';
             currentModeText.classList.remove('text-purple-600');

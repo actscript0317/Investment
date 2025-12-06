@@ -6,102 +6,94 @@
     <title>투자 프로젝트 </title>
     <link rel="stylesheet" href="/css/output.css">
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
-    <nav class="bg-white shadow-lg">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16">
-                <div class="flex items-center">
-                    <a href="/home.html" class="text-xl sm:text-2xl font-bold text-blue-600">주식 트레이딩</a>
-                </div>
-                <div id="navButtons" class="hidden sm:flex items-center space-x-2 sm:space-x-4">
-                    <a href="/home.html" class="text-blue-600 font-semibold px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm">홈</a>
-                    <a href="/chart.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">차트</a>
-                    <a href="/history.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">거래내역</a>
-                    <a href="/returns.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">수익률</a>
-                    <a href="/account.html" class="text-gray-700 hover:text-blue-600 px-2 sm:px-3 py-2 rounded-md text-xs sm:text-sm font-medium">내 계좌</a>
-                </div>
-                <!-- Mobile menu button -->
-                <div class="sm:hidden flex items-center">
-                    <button id="mobileMenuBtn" class="text-gray-700 hover:text-blue-600 p-2">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
-                    </button>
-                </div>
+<body class="bg-dark-bg text-text-main pb-24">
+    <!-- Main Content -->
+    <main class="max-w-md mx-auto px-5 pt-8">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-text-main tracking-tight">1억 달성 프로젝트</h1>
+                <p class="text-sm text-text-sub mt-1">Financial Freedom Journey</p>
             </div>
-        </div>
-        <!-- Mobile menu -->
-        <div id="mobileMenu" class="hidden sm:hidden bg-white border-t border-gray-200">
-            <div class="px-4 py-3 space-y-2">
-                <a href="/home.html" class="block text-blue-600 font-semibold px-3 py-2 rounded-md text-sm">홈</a>
-                <a href="/chart.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">차트</a>
-                <a href="/history.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">거래내역</a>
-                <a href="/returns.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">수익률</a>
-                <a href="/account.html" class="block text-gray-700 hover:text-blue-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium">내 계좌</a>
+            <div class="w-10 h-10 rounded-full bg-dark-card border border-gray-800 flex items-center justify-center shadow-glow">
+                <span class="text-xl">💰</span>
             </div>
-        </div>
-    </nav>
+        </header>
 
-    <!-- 1억 달성 프로젝트 Section -->
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16">
-        <div class="bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-12">
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-gray-900 text-center mb-6 sm:mb-8">
-                💰 1억 달성 프로젝트
-            </h1>
-
-            <!-- 현재 상태 카드들 -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-10">
-                <div class="text-center p-4 sm:p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl sm:rounded-2xl border border-blue-100">
-                    <p class="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">현재 자산</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-blue-600" id="currentAsset">-</p>
-                </div>
-                <div class="text-center p-4 sm:p-6 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl border border-green-100">
-                    <p class="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">달성률</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-green-600" id="achievementRate">-%</p>
-                </div>
-                <div class="text-center p-4 sm:p-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl sm:rounded-2xl border border-purple-100">
-                    <p class="text-xs sm:text-sm text-gray-600 mb-1 sm:mb-2">목표까지</p>
-                    <p class="text-2xl sm:text-3xl font-bold text-purple-600" id="remainingAmount">-</p>
-                </div>
+        <!-- Progress Card -->
+        <div class="glass-card p-6 mb-6 relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-brand-gold opacity-5 rounded-full blur-3xl -mr-10 -mt-10"></div>
+            
+            <div class="flex justify-between items-end mb-2">
+                <span class="text-sm text-text-sub font-medium">현재 자산</span>
+                <span class="text-xs text-brand-gold font-bold bg-brand-gold bg-opacity-10 px-2 py-1 rounded-full" id="achievementRate">0%</span>
             </div>
+            <h2 class="text-4xl font-bold text-text-main mb-6 tracking-tight" id="currentAsset">-</h2>
 
-            <!-- 게이지 바 -->
-            <div class="mb-6">
-                <div class="flex justify-between items-center mb-2 sm:mb-3">
-                    <span class="text-sm sm:text-lg font-semibold text-gray-700">진행 상황</span>
-                    <span class="text-sm sm:text-lg font-bold text-indigo-600" id="progressPercentage">0%</span>
+            <!-- Progress Bar -->
+            <div class="mb-4">
+                <div class="flex justify-between text-xs text-text-sub mb-2">
+                    <span>진행률</span>
+                    <span class="text-brand-gold" id="progressPercentage">0%</span>
                 </div>
-                <div class="relative w-full h-12 sm:h-16 bg-gray-200 rounded-full overflow-hidden shadow-inner">
-                    <div id="progressBar"
-                         class="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-full transition-all duration-1000 ease-out flex items-center justify-end pr-2 sm:pr-4"
-                         style="width: 0%">
-                        <span class="text-white font-bold text-xs sm:text-sm drop-shadow-lg" id="progressBarText"></span>
+                <div class="w-full h-3 bg-gray-800 rounded-full overflow-hidden">
+                    <div id="progressBar" class="h-full bg-gradient-to-r from-brand-gold to-yellow-200 rounded-full transition-all duration-1000 ease-out relative" style="width: 0%">
+                        <div class="absolute right-0 top-0 h-full w-1 bg-white opacity-50 animate-pulse"></div>
                     </div>
                 </div>
-                <div class="flex justify-between mt-2 text-xs sm:text-sm text-gray-500">
-                    <span>0원</span>
-                    <span class="font-semibold text-indigo-600">목표: 1억원</span>
+                <div class="flex justify-between mt-2 text-xs text-text-sub">
+                    <span>0</span>
+                    <span>1억</span>
                 </div>
             </div>
+        </div>
 
-            <!-- 응원 메시지 -->
-            <div class="text-center mt-6 sm:mt-8 p-4 sm:p-6 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100">
-                <p class="text-sm sm:text-base lg:text-lg text-gray-700" id="encouragementMessage">
-                    계좌 정보를 불러오는 중...
-                </p>
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-2 gap-4 mb-6">
+            <div class="glass-card p-5">
+                <div class="text-xs text-text-sub mb-1">목표까지</div>
+                <div class="text-lg font-bold text-brand-blue" id="remainingAmount">-</div>
+            </div>
+            <div class="glass-card p-5">
+                <div class="text-xs text-text-sub mb-1">오늘의 수익</div>
+                <div class="text-lg font-bold text-neon-up">+0원</div> <!-- Placeholder, logic handles this elsewhere if available -->
             </div>
         </div>
-    </div>
 
-    <!-- Footer -->
-    <footer class="bg-white mt-20">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <p class="text-center text-gray-500 text-sm">
-                &copy; 2025 주식 트레이딩 시스템. All rights reserved.
+        <!-- Encouragement Message -->
+        <div class="glass-card p-5 border-l-4 border-brand-gold">
+            <h3 class="text-sm font-bold text-text-main mb-1">Daily Insight</h3>
+            <p class="text-sm text-text-sub leading-relaxed" id="encouragementMessage">
+                데이터를 불러오는 중입니다...
             </p>
         </div>
-    </footer>
+    </main>
+
+    <!-- Bottom Navigation (Sticky) -->
+    <nav class="fixed bottom-0 left-0 w-full bg-dark-card border-t border-gray-800 pb-safe pt-2 px-6 z-50">
+        <div class="flex justify-between items-center max-w-md mx-auto h-16">
+            <a href="/home.html" class="nav-item active flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                <span class="text-[10px] font-medium">홈</span>
+            </a>
+            <a href="/chart.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
+                <span class="text-[10px] font-medium">차트</span>
+            </a>
+            <a href="/history.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <span class="text-[10px] font-medium">내역</span>
+            </a>
+            <a href="/returns.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+                <span class="text-[10px] font-medium">수익</span>
+            </a>
+            <a href="/account.html" class="nav-item flex flex-col items-center space-y-1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                <span class="text-[10px] font-medium">계좌</span>
+            </a>
+        </div>
+    </nav>
 
     <script type="module" src="/js/index.js"></script>
 </body>
