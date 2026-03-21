@@ -36,16 +36,16 @@ async function loadAccountBalance() {
         const data = await response.json();
 
         if (!response.ok) {
-            // 토큰 없음 에러 체크
-            if (data.message && data.message.includes('토큰')) {
+            // 토큰 에러 메시지 변경 확인
+            if (data.needToken) {
                 showTokenError();
                 return;
             }
             throw new Error(data.message || '잔고 조회에 실패했습니다.');
         }
 
-        // 응답 데이터 구조 확인
-        console.log('Balance Data:', data);
+        // 응답 데이터 구조 확인 (키움증권 연동 로그)
+        console.log('Balance Fetch Response:', data);
 
         // 계좌 요약 정보 업데이트
         updateAccountSummary(data);
@@ -65,69 +65,61 @@ async function loadAccountBalance() {
 
 // 계좌 요약 정보 업데이트
 function updateAccountSummary(data) {
-    // 한국투자증권 API 응답 구조에 맞춰 데이터 추출
-    const output2 = data.output2 || [];
+    console.log('--- 📊 계좌 잔고 데이터 수신 (키움증권 연동 확인용) ---');
+    console.log('Balance Data:', data);
 
-    console.log('Account Summary Data:', output2); // 디버깅용
+    // 공통/예상되는 잔고 요약 객체 추출 시도
+    const summary = Array.isArray(data.output2) ? data.output2[0] : (data.output2 || data.output || data);
 
-    if (output2.length > 0) {
-        const summary = output2[0];
+    let totalAssets = 0;
+    let totalProfit = 0;
+    let totalInvestment = 0;
 
-        console.log('Full Summary Object:', summary); // 전체 필드 확인
-
-        // 순자산 (융자금 제외한 실제 자본) - radix 10 명시
-        const totalAssets = parseInt(summary.nass_amt || '0', 10);
-        document.getElementById('totalAssets').textContent = formatCurrency(totalAssets);
-
-        // 평가손익 - radix 10 명시
-        const totalProfit = parseInt(summary.evlu_pfls_smtl_amt || '0', 10);
-        const profitElement = document.getElementById('totalProfit');
-        profitElement.textContent = formatCurrency(totalProfit);
-        profitElement.className = `text-lg font-bold ${totalProfit >= 0 ? 'text-red-600' : 'text-blue-600'}`;
-
-        // 수익률 계산 (평가손익 / 매입금액 합계 * 100)
-        // pchs_amt_smtl_amt = 매입금액 합계 (실제 투자원금) - radix 10 명시
-        const totalInvestment = parseInt(summary.pchs_amt_smtl_amt || '0', 10);
-        let profitRate = 0;
-
-        if (totalInvestment > 0) {
-            profitRate = (totalProfit / totalInvestment) * 100;
-        }
-
-        const profitRateElement = document.getElementById('totalProfitRate');
-
-        console.log('📊 계좌 요약 데이터:');
-        console.log('  - 순자산(nass_amt):', formatCurrency(totalAssets));
-        console.log('  - 매입금액(pchs_amt_smtl_amt):', formatCurrency(totalInvestment));
-        console.log('  - 평가손익(evlu_pfls_smtl_amt):', formatCurrency(totalProfit));
-        console.log('  - 수익률:', profitRate.toFixed(2) + '%');
-
-        const profitSign = profitRate >= 0 ? '+' : '';
-        profitRateElement.textContent = profitSign + profitRate.toFixed(2) + '%';
-        profitRateElement.className = `text-lg font-bold ${profitRate >= 0 ? 'text-red-600' : 'text-blue-600'}`;
-    } else {
-        // 데이터가 없을 경우
-        document.getElementById('totalAssets').textContent = formatCurrency(0);
-        document.getElementById('totalProfit').textContent = formatCurrency(0);
-        document.getElementById('totalProfitRate').textContent = '0.00%';
+    if (summary) {
+        // 여러 증권사의 가능한 필드명을 모두 체크 (키움증권 REST 필드명 추측)
+        totalAssets = parseInt(summary.sunamat || summary.dnst_st_evlu_amt || summary.tot_evlu_amt || summary.nass_amt || '0', 10);
+        totalProfit = parseInt(summary.rt22 || summary.evlu_pfls_smtl_amt || summary.tot_evlu_pfls_amt || '0', 10);
+        totalInvestment = parseInt(summary.pchs_amt_smtl_amt || summary.tot_pchs_amt || '0', 10);
     }
+
+    document.getElementById('totalAssets').textContent = formatCurrency(totalAssets);
+
+    const profitElement = document.getElementById('totalProfit');
+    profitElement.textContent = formatCurrency(totalProfit);
+    profitElement.className = `text-lg font-bold ${totalProfit >= 0 ? 'text-red-600' : 'text-blue-600'}`;
+
+    let profitRate = 0;
+    if (totalInvestment > 0) {
+        profitRate = (totalProfit / totalInvestment) * 100;
+    }
+
+    const profitRateElement = document.getElementById('totalProfitRate');
+    const profitSign = profitRate >= 0 ? '+' : '';
+    profitRateElement.textContent = profitSign + profitRate.toFixed(2) + '%';
+    profitRateElement.className = `text-lg font-bold ${profitRate >= 0 ? 'text-red-600' : 'text-blue-600'}`;
 }
 
 // 보유 종목 세로 카드 형식으로 업데이트
 async function updateHoldingsTable(data) {
     const holdingsGrid = document.getElementById('holdingsGrid');
-    const holdings = data.output1 || [];
+
+    // 키움증권 응답에 맞게 배열 추출
+    let holdings = [];
+    if (Array.isArray(data.output1)) holdings = data.output1;
+    else if (Array.isArray(data.output)) holdings = data.output;
+    else if (data && typeof data === 'object' && Array.isArray(data.detail)) holdings = data.detail;
 
     // 보유수량이 0보다 큰 종목만 필터링
     const activeHoldings = holdings.filter(stock => {
-        const quantity = parseInt(stock.hldg_qty || '0', 10);
+        const quantity = parseInt(stock.hldg_qty || stock.buy_qty || stock.qty || '0', 10);
         return quantity > 0;
     });
 
     if (activeHoldings.length === 0) {
         holdingsGrid.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
-                보유 종목이 없습니다.
+            <div class="text-center py-8 text-gray-500 bg-dark-card rounded-xl border border-gray-800 border-dashed">
+                <p>보유 종목이 없거나 데이터를 불러올 수 없습니다.</p>
+                <p class="text-xs text-yellow-600 mt-2">※ 키움증권 데이터 구조 문제 시 개발자도구(F12) 콘솔 값을 확인하세요.</p>
             </div>
         `;
         return;
@@ -135,19 +127,19 @@ async function updateHoldingsTable(data) {
 
     // 모든 종목의 가격 레벨을 병렬로 로드
     const priceLevelsPromises = activeHoldings.map(stock =>
-        loadPriceLevels(stock.pdno || '')
+        loadPriceLevels(stock.pdno || stock.iscd || stock.item_code || '')
     );
     const allPriceLevels = await Promise.all(priceLevelsPromises);
 
     holdingsGrid.innerHTML = activeHoldings.map((stock, index) => {
-        const stockCode = stock.pdno || '';
-        const stockName = stock.prdt_name || '알 수 없음';
-        const quantity = parseInt(stock.hldg_qty || '0', 10);
-        const avgPrice = parseInt(stock.pchs_avg_pric || '0', 10);
-        const currentPrice = parseInt(stock.prpr || '0', 10);
-        const evalAmount = parseInt(stock.evlu_amt || '0', 10);
-        const profit = parseInt(stock.evlu_pfls_amt || '0', 10);
-        const profitRate = parseFloat(stock.evlu_pfls_rt || '0');
+        const stockCode = stock.pdno || stock.iscd || stock.item_code || '';
+        const stockName = stock.prdt_name || stock.item_name || stock.name || '알 수 없음';
+        const quantity = parseInt(stock.hldg_qty || stock.buy_qty || stock.qty || '0', 10);
+        const avgPrice = parseInt(stock.pchs_avg_pric || stock.pchs_avg_prc || stock.avg_prc || '0', 10);
+        const currentPrice = parseInt(stock.prpr || stock.now_prc || stock.prc || '0', 10);
+        const evalAmount = parseInt(stock.evlu_amt || stock.evlu_amt || '0', 10);
+        const profit = parseInt(stock.evlu_pfls_amt || stock.evlu_pfls_amt || '0', 10);
+        const profitRate = parseFloat(stock.evlu_pfls_rt || stock.evlu_pfls_rt || '0');
 
         const isProfit = profit >= 0;
         const profitColor = isProfit ? 'text-green-700' : 'text-blue-700';
@@ -448,14 +440,13 @@ function formatDateTime(isoString) {
 // 토큰 에러 메시지 표시
 function showTokenError() {
     // 페이지 상단의 토큰 메시지 표시
-    showTokenMessage('warning', '⚠️ 토큰이 발급되지 않았습니다. 페이지 상단의 "토큰 발급" 버튼을 클릭하여 토큰을 발급받으세요.');
+    showTokenMessage('warning', '⚠️ 계좌 연동 준비 중입니다.');
 
     // 페이지에 안내 메시지 표시
     document.getElementById('accountSummary').innerHTML = `
         <div class="col-span-3 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-            <h3 class="text-lg font-semibold text-yellow-800 mb-2">⚠️ 토큰 발급이 필요합니다</h3>
-            <p class="text-yellow-700 mb-4">계좌 정보를 조회하려면 먼저 한국투자증권 API 토큰을 발급받아야 합니다.</p>
-            <p class="text-yellow-700">페이지 상단의 <strong>"API 토큰 상태"</strong> 섹션에서 <strong>"토큰 발급"</strong> 버튼을 클릭해주세요.</p>
+            <h3 class="text-lg font-semibold text-yellow-800 mb-2">⚠️ 계좌 연동 준비 중</h3>
+            <p class="text-yellow-700 mb-4">현재 키움증권 계좌 연동을 준비 중입니다.</p>
         </div>
     `;
 }

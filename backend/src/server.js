@@ -4,6 +4,7 @@ const cors = require('cors');
 const fs = require('fs');
 const kisApiService = require('./services/kisApiService');
 const kisApi = require('./services/kisApi');
+const kiwoomApi = require('./services/kiwoomApi');
 const themeDetectionService = require('./services/themeDetection');
 const stockPriceHistoryService = require('./services/stockPriceHistory');
 const { createClient } = require('@supabase/supabase-js');
@@ -165,23 +166,25 @@ app.get('/api/stock/search', async (req, res) => {
     }
 });
 
-// 계좌 잔고 조회 API
+// 계좌 잔고 조회 API (키움증권 연동)
 app.get('/api/account/balance', async (req, res) => {
     try {
-        // 게스트 모드인 경우 query parameter로 전달된 계좌번호 사용
-        const accountNumber = req.query.accountNumber || process.env.KIS_ACCOUNT_NUMBER;
+        const token = process.env.KIWOOM_ACCESS_TOKEN;
 
-        if (!accountNumber) {
-            console.error('❌ KIS_ACCOUNT_NUMBER가 설정되지 않았습니다.');
-            return res.status(400).json({
-                error: 'Account number not configured',
-                message: '계좌번호가 설정되지 않았습니다. backend/.env 파일에 KIS_ACCOUNT_NUMBER를 설정해주세요.'
+        if (!token) {
+            console.error('❌ KIWOOM_ACCESS_TOKEN이 설정되지 않았습니다.');
+            return res.status(401).json({
+                error: 'Token required',
+                message: '키움증권 접근 토큰(액세스 토큰)이 필요합니다. backend/.env 파일에 KIWOOM_ACCESS_TOKEN을 설정해주세요.',
+                needToken: true
             });
         }
 
-        console.log('✅ 계좌 잔고 조회 요청:', accountNumber);
-        const balanceData = await kisApi.getAccountBalance(accountNumber);
+        console.log('✅ 키움증권 계좌 잔고 조회 요청');
+        const balanceData = await kiwoomApi.getAccountBalance(token);
         console.log('✅ 계좌 잔고 조회 성공');
+
+        // 프론트엔드가 변경된 구조를 파악할 수 있도록 데이터는 그대로 전달
         res.json(balanceData);
     } catch (error) {
         console.error('❌ 계좌 잔고 조회 실패:', error.message);
@@ -189,7 +192,7 @@ app.get('/api/account/balance', async (req, res) => {
         res.status(500).json({
             error: 'Failed to fetch account balance',
             message: error.message,
-            details: error.response?.data?.msg || '한국투자증권 API 호출 실패'
+            details: error.response?.data?.message || '키움증권 API 호출 실패'
         });
     }
 });
@@ -387,7 +390,7 @@ app.get('/api/stock/price-levels/:stockCode', async (req, res) => {
 
         if (supabase) {
             // Supabase에서 조회
-            const { data, error} = await supabase
+            const { data, error } = await supabase
                 .from('stock_price_levels')
                 .select('*')
                 .eq('stock_code', stockCode)
