@@ -123,3 +123,20 @@ CREATE INDEX IF NOT EXISTS idx_stock_price_levels_code ON stock_price_levels(sto
 -- 업데이트 트리거
 CREATE TRIGGER update_stock_price_levels_updated_at BEFORE UPDATE ON stock_price_levels
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- API 토큰 관리 테이블 (키움증권 등 토큰 재사용)
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id SERIAL PRIMARY KEY,
+    provider VARCHAR(50) NOT NULL UNIQUE,
+    access_token TEXT NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 인덱스 생성
+CREATE INDEX IF NOT EXISTS idx_api_tokens_provider ON api_tokens(provider);
+
+-- 업데이트 트리거
+CREATE TRIGGER update_api_tokens_updated_at BEFORE UPDATE ON api_tokens
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

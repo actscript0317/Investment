@@ -169,19 +169,8 @@ app.get('/api/stock/search', async (req, res) => {
 // 계좌 잔고 조회 API (키움증권 연동)
 app.get('/api/account/balance', async (req, res) => {
     try {
-        const token = process.env.KIWOOM_ACCESS_TOKEN;
-
-        if (!token) {
-            console.error('❌ KIWOOM_ACCESS_TOKEN이 설정되지 않았습니다.');
-            return res.status(401).json({
-                error: 'Token required',
-                message: '키움증권 접근 토큰(액세스 토큰)이 필요합니다. backend/.env 파일에 KIWOOM_ACCESS_TOKEN을 설정해주세요.',
-                needToken: true
-            });
-        }
-
         console.log('✅ 키움증권 계좌 잔고 조회 요청');
-        const balanceData = await kiwoomApi.getAccountBalance(token);
+        const balanceData = await kiwoomApi.getAccountBalance(); // 내부적으로 getAccessToken()을 호출함
         console.log('✅ 계좌 잔고 조회 성공');
 
         // 프론트엔드가 변경된 구조를 파악할 수 있도록 데이터는 그대로 전달

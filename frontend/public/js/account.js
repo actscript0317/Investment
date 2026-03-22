@@ -69,17 +69,27 @@ function updateAccountSummary(data) {
     console.log('Balance Data:', data);
 
     // 공통/예상되는 잔고 요약 객체 추출 시도
-    const summary = Array.isArray(data.output2) ? data.output2[0] : (data.output2 || data.output || data);
+    const summary = data; // Kiwoom 응답은 최상위 객체에 요약 필드 존재
 
     let totalAssets = 0;
     let totalProfit = 0;
     let totalInvestment = 0;
+    let profitRate = 0;
 
     if (summary) {
-        // 여러 증권사의 가능한 필드명을 모두 체크 (키움증권 REST 필드명 추측)
-        totalAssets = parseInt(summary.sunamat || summary.dnst_st_evlu_amt || summary.tot_evlu_amt || summary.nass_amt || '0', 10);
-        totalProfit = parseInt(summary.rt22 || summary.evlu_pfls_smtl_amt || summary.tot_evlu_pfls_amt || '0', 10);
-        totalInvestment = parseInt(summary.pchs_amt_smtl_amt || summary.tot_pchs_amt || '0', 10);
+        // Kiwoom 실제 필드명 매핑 (tot_evlt_amt, prsm_dpst_aset_amt 등)
+        const equity = parseInt(summary.tot_evlt_amt || summary.nass_amt || '0', 10);
+        const cash = parseInt(summary.prsm_dpst_aset_amt || '0', 10); // 예수금
+
+        totalAssets = equity + cash;
+        totalProfit = parseInt(summary.tot_evlt_pl || summary.evlu_pfls_smtl_amt || '0', 10);
+        totalInvestment = parseInt(summary.tot_pur_amt || summary.pchs_amt_smtl_amt || '0', 10);
+        profitRate = parseFloat(summary.tot_prft_rt || '0');
+    }
+
+    // 만약 계산된 profitRate가 0이고 투자금이 있다면 계산
+    if (profitRate === 0 && totalInvestment > 0) {
+        profitRate = (totalProfit / totalInvestment) * 100;
     }
 
     document.getElementById('totalAssets').textContent = formatCurrency(totalAssets);
@@ -88,10 +98,7 @@ function updateAccountSummary(data) {
     profitElement.textContent = formatCurrency(totalProfit);
     profitElement.className = `text-lg font-bold ${totalProfit >= 0 ? 'text-red-600' : 'text-blue-600'}`;
 
-    let profitRate = 0;
-    if (totalInvestment > 0) {
-        profitRate = (totalProfit / totalInvestment) * 100;
-    }
+    // 수익률 계산은 이미 상단에서 완료됨
 
     const profitRateElement = document.getElementById('totalProfitRate');
     const profitSign = profitRate >= 0 ? '+' : '';
@@ -105,7 +112,8 @@ async function updateHoldingsTable(data) {
 
     // 키움증권 응답에 맞게 배열 추출
     let holdings = [];
-    if (Array.isArray(data.output1)) holdings = data.output1;
+    if (Array.isArray(data.acnt_evlt_remn_indv_tot)) holdings = data.acnt_evlt_remn_indv_tot;
+    else if (Array.isArray(data.output1)) holdings = data.output1;
     else if (Array.isArray(data.output)) holdings = data.output;
     else if (data && typeof data === 'object' && Array.isArray(data.detail)) holdings = data.detail;
 
@@ -126,20 +134,24 @@ async function updateHoldingsTable(data) {
     }
 
     // 모든 종목의 가격 레벨을 병렬로 로드
-    const priceLevelsPromises = activeHoldings.map(stock =>
-        loadPriceLevels(stock.pdno || stock.iscd || stock.item_code || '')
-    );
+    const priceLevelsPromises = activeHoldings.map(stock => {
+        const rawCode = stock.stk_cd || stock.pdno || stock.iscd || stock.item_code || '';
+        // 키움증권 코드는 'A300720' 처럼 'A'가 붙어올 수 있으므로 제거
+        const parsedCode = rawCode.startsWith('A') ? rawCode.substring(1) : rawCode;
+        return loadPriceLevels(parsedCode);
+    });
     const allPriceLevels = await Promise.all(priceLevelsPromises);
 
     holdingsGrid.innerHTML = activeHoldings.map((stock, index) => {
-        const stockCode = stock.pdno || stock.iscd || stock.item_code || '';
-        const stockName = stock.prdt_name || stock.item_name || stock.name || '알 수 없음';
-        const quantity = parseInt(stock.hldg_qty || stock.buy_qty || stock.qty || '0', 10);
-        const avgPrice = parseInt(stock.pchs_avg_pric || stock.pchs_avg_prc || stock.avg_prc || '0', 10);
-        const currentPrice = parseInt(stock.prpr || stock.now_prc || stock.prc || '0', 10);
-        const evalAmount = parseInt(stock.evlu_amt || stock.evlu_amt || '0', 10);
-        const profit = parseInt(stock.evlu_pfls_amt || stock.evlu_pfls_amt || '0', 10);
-        const profitRate = parseFloat(stock.evlu_pfls_rt || stock.evlu_pfls_rt || '0');
+        const rawCode = stock.stk_cd || stock.pdno || stock.iscd || stock.item_code || '';
+        const stockCode = rawCode.startsWith('A') ? rawCode.substring(1) : rawCode;
+        const stockName = stock.stk_nm || stock.prdt_name || stock.item_name || stock.name || '알 수 없음';
+        const quantity = parseInt(stock.rmnd_qty || stock.hldg_qty || stock.buy_qty || stock.qty || '0', 10);
+        const avgPrice = parseInt(stock.pur_pric || stock.pchs_avg_pric || stock.pchs_avg_prc || stock.avg_prc || '0', 10);
+        const currentPrice = parseInt(stock.cur_prc || stock.prpr || stock.now_prc || stock.prc || '0', 10);
+        const evalAmount = parseInt(stock.evlt_amt || stock.evlu_amt || '0', 10);
+        const profit = parseInt(stock.evltv_prft || stock.evlu_pfls_amt || '0', 10);
+        const profitRate = parseFloat(stock.prft_rt || stock.evlu_pfls_rt || '0');
 
         const isProfit = profit >= 0;
         const profitColor = isProfit ? 'text-green-700' : 'text-blue-700';
