@@ -40,21 +40,22 @@ async function loadAccountBalance() {
             throw new Error(data.message || '잔고 조회에 실패했습니다.');
         }
 
-        const output2 = data.output2 || [];
+        const summary = data; // Kiwoom JSON returns summary at the root level
 
-        if (output2.length > 0) {
-            const summary = output2[0];
-            // nass_amt (순자산) 사용 - 융자금을 제외한 실제 자본
-            const currentAsset = parseInt(summary.nass_amt || '0', 10);
+        if (summary && (summary.tot_evlt_amt || summary.nass_amt)) {
+            // Kiwoom 실제 필드명 매핑 (tot_evlt_amt, prsm_dpst_aset_amt 등)
+            const equity = parseInt(summary.tot_evlt_amt || summary.nass_amt || '0', 10);
+            const cash = parseInt(summary.prsm_dpst_aset_amt || '0', 10); // 예수금
+            const currentAsset = equity + cash;
 
             console.log('📊 홈 화면 자산 데이터:', formatCurrency(currentAsset));
             updateGaugeBar(currentAsset);
         } else {
-            showError('계좌 정보를 불러올 수 없습니다.');
+            showError('계좌 정보를 불러올 수 없거나 잔고가 없습니다.');
         }
     } catch (error) {
         console.error('계좌 잔고 조회 오류:', error);
-        showError('계좌 정보를 불러오는데 실패했습니다. 로그인 후 토큰을 발급받아주세요.');
+        showError(error.message || '계좌 정보를 불러오는데 실패했습니다.');
     }
 }
 
