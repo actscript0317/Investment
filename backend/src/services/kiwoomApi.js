@@ -112,7 +112,16 @@ class KiwoomApiClient {
             return accessToken;
         } catch (error) {
             console.error('❌ 키움증권 토큰 발급 실패:', error.response?.data || error.message);
-            throw new Error('토큰 발급에 실패했습니다. API 키를 확인해주세요.');
+
+            let errorDetail = error.message;
+            if (error.response?.data) {
+                errorDetail = JSON.stringify(error.response.data);
+            }
+
+            // 환경변수가 비어있는지 진단 메시지 추가
+            const envStatus = `(APP_KEY: ${this.appKey ? '존재함' : '없음'}, SECRET: ${this.appSecret ? '존재함' : '없음'})`;
+
+            throw new Error(`토큰 발급 상세 에러: ${errorDetail} ${envStatus}`);
         }
     }
 
