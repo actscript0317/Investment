@@ -40,10 +40,11 @@ async function loadAccountBalance() {
             throw new Error(data.message || '잔고 조회에 실패했습니다.');
         }
 
-        const summary = data; // Kiwoom JSON returns summary at the root level
+        // KIS 응답 구조에서 요약 정보 추출 (output2[0])
+        const summary = (data.output2 && data.output2.length > 0) ? data.output2[0] : (data.output || data);
 
         if (summary && (summary.tot_evlt_amt || summary.nass_amt)) {
-            // Kiwoom 실제 필드명 매핑 (tot_evlt_amt, prsm_dpst_aset_amt 등)
+            // 필드명 매핑 (nass_amt: 총자산, tot_evlt_amt: 총평가금액 등)
             const equity = parseInt(summary.tot_evlt_amt || summary.nass_amt || '0', 10);
             const cash = parseInt(summary.prsm_dpst_aset_amt || '0', 10); // 예수금
             const currentAsset = equity + cash;

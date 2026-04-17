@@ -44,7 +44,7 @@ async function loadAccountBalance() {
             throw new Error(data.message || '잔고 조회에 실패했습니다.');
         }
 
-        // 응답 데이터 구조 확인 (키움증권 연동 로그)
+        // 응답 데이터 구조 확인 (한국투자증권 연동 로그)
         console.log('Balance Fetch Response:', data);
 
         // 계좌 요약 정보 업데이트
@@ -65,11 +65,12 @@ async function loadAccountBalance() {
 
 // 계좌 요약 정보 업데이트
 function updateAccountSummary(data) {
-    console.log('--- 📊 계좌 잔고 데이터 수신 (키움증권 연동 확인용) ---');
+    console.log('--- 📊 계좌 잔고 데이터 수신 (한국투자증권 연동) ---');
     console.log('Balance Data:', data);
 
-    // 공통/예상되는 잔고 요약 객체 추출 시도
-    const summary = data; // Kiwoom 응답은 최상위 객체에 요약 필드 존재
+    // KIS 응답 구조에서 데이터 추출
+    // output2[0]에 요약 정보가 있음
+    const summary = (data.output2 && data.output2.length > 0) ? data.output2[0] : (data.output || data);
 
     let totalAssets = 0;
     let totalProfit = 0;
@@ -77,7 +78,7 @@ function updateAccountSummary(data) {
     let profitRate = 0;
 
     if (summary) {
-        // Kiwoom 실제 필드명 매핑 (tot_evlt_amt, prsm_dpst_aset_amt 등)
+        // KIS 실제 필드명 매핑 (tot_evlt_amt, prsm_dpst_aset_amt 등)
         const equity = parseInt(summary.tot_evlt_amt || summary.nass_amt || '0', 10);
         const cash = parseInt(summary.prsm_dpst_aset_amt || '0', 10); // 예수금
 
@@ -110,7 +111,7 @@ function updateAccountSummary(data) {
 async function updateHoldingsTable(data) {
     const holdingsGrid = document.getElementById('holdingsGrid');
 
-    // 키움증권 응답에 맞게 배열 추출
+    // 한국투자증권 응답에 맞게 배열 추출
     let holdings = [];
     if (Array.isArray(data.acnt_evlt_remn_indv_tot)) holdings = data.acnt_evlt_remn_indv_tot;
     else if (Array.isArray(data.output1)) holdings = data.output1;
@@ -127,7 +128,7 @@ async function updateHoldingsTable(data) {
         holdingsGrid.innerHTML = `
             <div class="text-center py-8 text-gray-500 bg-dark-card rounded-xl border border-gray-800 border-dashed">
                 <p>보유 종목이 없거나 데이터를 불러올 수 없습니다.</p>
-                <p class="text-xs text-yellow-600 mt-2">※ 키움증권 데이터 구조 문제 시 개발자도구(F12) 콘솔 값을 확인하세요.</p>
+                <p class="text-xs text-yellow-600 mt-2">※ 한국투자증권 데이터 구조 문제 시 개발자도구(F12) 콘솔 값을 확인하세요.</p>
             </div>
         `;
         return;
@@ -136,7 +137,7 @@ async function updateHoldingsTable(data) {
     // 모든 종목의 가격 레벨을 병렬로 로드
     const priceLevelsPromises = activeHoldings.map(stock => {
         const rawCode = stock.stk_cd || stock.pdno || stock.iscd || stock.item_code || '';
-        // 키움증권 코드는 'A300720' 처럼 'A'가 붙어올 수 있으므로 제거
+        // 종목코드가 'A'로 시작하는 경우 제거 (필요 시)
         const parsedCode = rawCode.startsWith('A') ? rawCode.substring(1) : rawCode;
         return loadPriceLevels(parsedCode);
     });
@@ -458,7 +459,7 @@ function showTokenError() {
     document.getElementById('accountSummary').innerHTML = `
         <div class="col-span-3 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
             <h3 class="text-lg font-semibold text-yellow-800 mb-2">⚠️ 계좌 연동 준비 중</h3>
-            <p class="text-yellow-700 mb-4">현재 키움증권 계좌 연동을 준비 중입니다.</p>
+            <p class="text-yellow-700 mb-4">현재 한국투자증권 계좌 연동을 준비 중입니다.</p>
         </div>
     `;
 }

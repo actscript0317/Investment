@@ -4,7 +4,6 @@ const cors = require('cors');
 const fs = require('fs');
 const kisApiService = require('./services/kisApiService');
 const kisApi = require('./services/kisApi');
-const kiwoomApi = require('./services/kiwoomApi');
 const themeDetectionService = require('./services/themeDetection');
 const stockPriceHistoryService = require('./services/stockPriceHistory');
 const { createClient } = require('@supabase/supabase-js');
@@ -166,14 +165,15 @@ app.get('/api/stock/search', async (req, res) => {
     }
 });
 
-// 계좌 잔고 조회 API (키움증권 연동)
+// 계좌 잔고 조회 API (한국투자증권 연동)
 app.get('/api/account/balance', async (req, res) => {
     try {
-        console.log('✅ 키움증권 계좌 잔고 조회 요청');
-        const balanceData = await kiwoomApi.getAccountBalance(); // 내부적으로 getAccessToken()을 호출함
+        const accountNumber = req.query.accountNumber || process.env.KIS_ACCOUNT_NUMBER;
+        console.log(`✅ 한국투자증권 계좌 잔고 조회 요청: ${accountNumber}`);
+        const balanceData = await kisApi.getAccountBalance(accountNumber);
         console.log('✅ 계좌 잔고 조회 성공');
 
-        // 프론트엔드가 변경된 구조를 파악할 수 있도록 데이터는 그대로 전달
+        // 프론트엔드가 데이터를 처리할 수 있도록 전달
         res.json(balanceData);
     } catch (error) {
         console.error('❌ 계좌 잔고 조회 실패:', error.message);
@@ -181,7 +181,7 @@ app.get('/api/account/balance', async (req, res) => {
         res.status(500).json({
             error: 'Failed to fetch account balance',
             message: error.message,
-            details: error.response?.data?.message || '키움증권 API 호출 실패'
+            details: error.response?.data?.msg || '한국투자증권 API 호출 실패'
         });
     }
 });
